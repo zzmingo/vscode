@@ -12,6 +12,7 @@ import { MarkedString } from 'vs/base/common/htmlContent';
 import { KeyCode, KeyMod, KeyChord } from 'vs/base/common/keyCodes';
 import { Keybinding } from 'vs/base/common/keybinding';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
+import URI from 'vs/base/common/uri';
 import * as dom from 'vs/base/browser/dom';
 import { renderHtml } from 'vs/base/browser/htmlContentRenderer';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
@@ -487,6 +488,9 @@ function isInterestingEditorModel(editor: editorCommon.ICommonCodeEditor): boole
 	if (!model) {
 		return false;
 	}
-	let url = model.uri.toString();
-	return INTERESTING_FILE.test(url);
+	return isKeybindingFile(model.uri);
+}
+
+export function isKeybindingFile(uri: URI): boolean {
+	return INTERESTING_FILE.test(uri.toString());
 }
