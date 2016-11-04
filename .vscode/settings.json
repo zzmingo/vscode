@@ -26,4 +26,7 @@
 		}
 	}],
 	"typescript.check.workspaceVersion": false
+	, "typescript.tsdk": "P:/mseng/TypeScript/built/local"
+	, "typescript.tsdk_version": "2.0.7"
+	, "typescript.tsserver.trace": "messages"
 }

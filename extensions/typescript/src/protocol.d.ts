@@ -1524,6 +1524,17 @@ declare namespace ts.server.protocol {
         spans: TextSpan[];
         childItems?: NavigationTree[];
     }
+    type TypingsInstalledEventName = "typingsInstalled";
+    interface TypingsInstalledEvent extends Event {
+        event: TypingsInstalledEventName;
+        body: TypingsInstalledEventBody;
+    }
+    interface TypingsInstalledEventBody {
+        /**
+         * Comma separated list of installed typing packages
+         */
+        installedPackages: string;
+    }
     interface NavBarResponse extends Response {
         body?: NavigationBarItem[];
     }

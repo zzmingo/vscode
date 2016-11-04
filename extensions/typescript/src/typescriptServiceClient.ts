@@ -405,6 +405,9 @@ export default class TypeScriptServiceClient implements ITypescriptServiceClient
 							args.push('--disableAutomaticTypingAcquisition');
 						}
 					}
+					if (this.apiVersion.has207Features()) {
+						args.push('--enableTelemetry');
+					}
 					electron.fork(modulePath, args, options, (err: any, childProcess: cp.ChildProcess) => {
 						if (err) {
 							this.lastError = err;
@@ -648,6 +651,11 @@ export default class TypeScriptServiceClient implements ITypescriptServiceClient
 					this.host.semanticDiagnosticsReceived(event as Proto.DiagnosticEvent);
 				} else if (event.event === 'configFileDiag') {
 					this.host.configFileDiagnosticsReceived(event as Proto.ConfigFileDiagnosticEvent);
+				} else if (event.event === 'typingsInstalled') {
+					let typingsInstalledEvent = event as Proto.TypingsInstalledEvent;
+					let properties: Map<string> = Object.create(null);
+					properties['installedPackages'] = typingsInstalledEvent.body.installedPackages;
+					this.telemetryReporter.sendTelemetryEvent(typingsInstalledEvent.event, properties);
 				}
 			} else {
 				throw new Error('Unknown message type ' + message.type + ' recevied');
