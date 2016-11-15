@@ -30,6 +30,14 @@
 	white-space: pre; /* enable to show labels that include multiple whitespaces */
 }
 
+.monaco-icon-label.severity-warning > .label-name {
+	background: url(green-squiggly.svg) repeat-x bottom left;
+}
+
+.monaco-icon-label.severity-error > .label-name {
+	background: url(red-squiggly.svg) repeat-x bottom left;
+}
+
 .monaco-icon-label > .label-description {
 	opacity: 0.7;
 	margin-left: 0.5em;

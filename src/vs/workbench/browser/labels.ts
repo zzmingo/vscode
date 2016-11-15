@@ -18,6 +18,9 @@ import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
 import { IModelService } from 'vs/editor/common/services/modelService';
+import { IMarkerService, IMarkerFilter } from 'vs/platform/markers/common/markers';
+import Severity from 'vs/base/common/severity';
+import { isEqual, isParent } from 'vs/platform/files/common/files';
 
 export interface IEditorLabel {
 	name: string;
@@ -29,23 +32,30 @@ export interface IResourceLabelOptions extends IIconLabelOptions {
 	isFolder?: boolean;
 }
 
+export interface IResourceLabelCreationOptions extends IIconLabelCreationOptions {
+	showSeverity?: boolean;
+}
+
 export class ResourceLabel extends IconLabel {
 	private toDispose: IDisposable[];
 	private label: IEditorLabel;
 	private options: IResourceLabelOptions;
+	private showSeverity: boolean;
 
 	constructor(
 		container: HTMLElement,
-		options: IIconLabelCreationOptions,
+		options: IResourceLabelCreationOptions,
 		@IExtensionService private extensionService: IExtensionService,
 		@IWorkspaceContextService protected contextService: IWorkspaceContextService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IModeService private modeService: IModeService,
-		@IModelService private modelService: IModelService
+		@IModelService private modelService: IModelService,
+		@IMarkerService private markerService: IMarkerService
 	) {
 		super(container, options);
 
 		this.toDispose = [];
+		this.showSeverity = options && options.showSeverity;
 
 		this.registerListeners();
 	}
@@ -53,6 +63,21 @@ export class ResourceLabel extends IconLabel {
 	private registerListeners(): void {
 		this.extensionService.onReady().then(() => this.render()); // update when extensions are loaded with potentially new languages
 		this.toDispose.push(this.configurationService.onDidUpdateConfiguration(() => this.render())); // update when file.associations change
+
+		if (this.showSeverity) {
+			this.toDispose.push(this.markerService.onMarkerChanged(marker => this.onMarkerChanged(marker))); // update when markers change
+		}
+	}
+
+	private onMarkerChanged(resources: uri[]): void {
+		if (resources.some(r => isEqual(r.fsPath, this.label.resource.fsPath) || isParent(r.fsPath, this.label.resource.fsPath))) {
+			let options: { filter: IMarkerFilter };
+			if (resources.length === 1) {
+				options = { filter: { resource: resources[0] } }; // speed up markers lookup by filtering for the one resource that changed
+			}
+
+			this.render(options);
+		}
 	}
 
 	public setLabel(label: IEditorLabel, options?: IResourceLabelOptions): void {
@@ -69,7 +94,7 @@ export class ResourceLabel extends IconLabel {
 		this.setValue();
 	}
 
-	private render(): void {
+	private render(options?: { filter: IMarkerFilter }): void {
 		if (!this.label) {
 			return;
 		}
@@ -88,10 +113,36 @@ export class ResourceLabel extends IconLabel {
 			extraClasses.push(...this.options.extraClasses);
 		}
 
+		let severity: Severity;
+		if (this.showSeverity) {
+			const markers = this.markerService.read(options ? options.filter : void 0);
+			for (let i = 0; i < markers.length; i++) {
+				const marker = markers[i];
+
+				if (marker.severity === Severity.Info) {
+					continue; // we only want warnings and errors
+				}
+
+				if (isEqual(marker.resource.fsPath, resource.fsPath) || isParent(marker.resource.fsPath, resource.fsPath)) {
+					severity = marker.severity;
+
+					if (severity === Severity.Error) {
+						break;
+					}
+				}
+			}
+
+			if (severity === Severity.Error) {
+				title = `${title}\nError(s) found.`;
+			} else if (severity === Severity.Warning) {
+				title = `${title}\nWarning(s) found.`;
+			}
+		}
+
 		const italic = this.options && this.options.italic;
 		const matches = this.options && this.options.matches;
 
-		this.setValue(this.label.name, this.label.description, { title, extraClasses, italic, matches });
+		this.setValue(this.label.name, this.label.description, { title, extraClasses, italic, matches, severity });
 	}
 
 	public dispose(): void {

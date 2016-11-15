@@ -265,6 +265,11 @@ configurationRegistry.registerConfiguration({
 			'type': 'boolean',
 			'description': nls.localize('enableDragAndDrop', "Controls if the explorer should allow to move files and folders via drag and drop."),
 			'default': true
+		},
+		'explorer.showProblems': {
+			'type': 'boolean',
+			'description': nls.localize('showProblems', "Controls if the explorer should show errors and warning decorations or not."),
+			'default': false
 		}
 	}
 });

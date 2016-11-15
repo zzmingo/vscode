@@ -13,6 +13,7 @@ import uri from 'vs/base/common/uri';
 import paths = require('vs/base/common/paths');
 import types = require('vs/base/common/types');
 import { IWorkspaceProvider, getPathLabel } from 'vs/base/common/labels';
+import Severity from 'vs/base/common/severity';
 
 export interface IIconLabelCreationOptions {
 	supportHighlights?: boolean;
@@ -23,6 +24,7 @@ export interface IIconLabelOptions {
 	extraClasses?: string[];
 	italic?: boolean;
 	matches?: IMatch[];
+	severity?: Severity;
 }
 
 export class IconLabel {
@@ -83,6 +85,12 @@ export class IconLabel {
 
 			if (options.italic) {
 				classes.push('italic');
+			}
+
+			if (options.severity === Severity.Warning) {
+				classes.push('severity-warning');
+			} else if (options.severity === Severity.Error) {
+				classes.push('severity-error');
 			}
 		}
 

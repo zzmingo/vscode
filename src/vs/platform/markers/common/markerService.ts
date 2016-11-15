@@ -11,7 +11,7 @@ import { isEmptyObject } from 'vs/base/common/types';
 import URI from 'vs/base/common/uri';
 import Event, { Emitter, debounceEvent } from 'vs/base/common/event';
 import Severity from 'vs/base/common/severity';
-import { IMarkerService, IMarkerData, IResourceMarker, IMarker, MarkerStatistics } from './markers';
+import { IMarkerService, IMarkerFilter, IMarkerData, IResourceMarker, IMarker, MarkerStatistics } from './markers';
 
 interface MapMap<V> {
 	[key: string]: { [key: string]: V };
@@ -256,7 +256,7 @@ export class MarkerService implements IMarkerService {
 		}
 	}
 
-	read(filter: { owner?: string; resource?: URI; take?: number; } = Object.create(null)): IMarker[] {
+	read(filter: IMarkerFilter = Object.create(null)): IMarker[] {
 
 		let {owner, resource, take} = filter;
 

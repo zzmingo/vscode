@@ -309,7 +309,7 @@ export class ExplorerView extends CollapsibleViewletView {
 
 	public createViewer(container: Builder): ITree {
 		const dataSource = this.instantiationService.createInstance(FileDataSource);
-		const renderer = this.instantiationService.createInstance(FileRenderer, this.viewletState, this.actionRunner);
+		const renderer = this.instantiationService.createInstance(FileRenderer, this.viewletState, this.actionRunner, () => this.tree.refresh());
 		const controller = this.instantiationService.createInstance(FileController, this.viewletState);
 		const sorter = new FileSorter();
 		this.filter = this.instantiationService.createInstance(FileFilter);

@@ -261,11 +261,15 @@ export class FileRenderer extends ActionsRenderer implements IRenderer {
 	private static ITEM_HEIGHT = 22;
 
 	private state: FileViewletState;
+	private showProblems: boolean;
+	private toDispose: IDisposable[];
 
 	constructor(
 		state: FileViewletState,
 		actionRunner: IActionRunner,
+		private refreshViewer: () => void,
 		@IContextViewService private contextViewService: IContextViewService,
+		@IConfigurationService private configurationService: IConfigurationService,
 		@IInstantiationService private instantiationService: IInstantiationService
 	) {
 		super({
@@ -274,6 +278,26 @@ export class FileRenderer extends ActionsRenderer implements IRenderer {
 		});
 
 		this.state = state;
+		this.toDispose = [];
+
+		this.onConfigurationUpdated(configurationService.getConfiguration<IFilesConfiguration>());
+
+		this.registerListeners();
+	}
+
+	private registerListeners(): void {
+		this.toDispose.push(this.configurationService.onDidUpdateConfiguration(e => this.onConfigurationUpdated(e.config, true)));
+	}
+
+	private onConfigurationUpdated(config: IFilesConfiguration, refresh?: boolean): void {
+		const showProblems = config && config.explorer && config.explorer.showProblems;
+		if (showProblems !== this.showProblems) {
+			this.showProblems = showProblems;
+
+			if (refresh) {
+				this.refreshViewer();
+			}
+		}
 	}
 
 	public getContentHeight(tree: ITree, element: any): number {
@@ -294,7 +318,7 @@ export class FileRenderer extends ActionsRenderer implements IRenderer {
 	}
 
 	private renderLabel(container: Builder, stat: FileStat): IElementCallback {
-		const label = this.instantiationService.createInstance(FileLabel, container.getHTMLElement(), void 0);
+		const label = this.instantiationService.createInstance(FileLabel, container.getHTMLElement(), { showSeverity: this.showProblems });
 
 		const extraClasses = ['explorer-item'];
 		label.setFile(stat.resource, { hidePath: true, isFolder: stat.isDirectory, extraClasses });
