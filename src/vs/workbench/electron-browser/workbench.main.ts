@@ -110,3 +110,5 @@ import 'vs/workbench/parts/themes/test/electron-browser/themes.test.contribution
 import 'vs/workbench/parts/watermark/electron-browser/watermark';
 
 import 'vs/workbench/parts/viewpicker/browser/viewpicker.contribution';
+
+import 'vs/workbench/parts/welcomeOverlay/browser/welcomeOverlay';
