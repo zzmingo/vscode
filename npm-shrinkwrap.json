@@ -429,6 +429,11 @@
       "from": "winreg@1.2.0",
       "resolved": "https://registry.npmjs.org/winreg/-/winreg-1.2.0.tgz"
     },
+    "v8-profiler": {
+      "version": "5.6.5",
+      "from": "git+https://github.com/jrieken/v8-profiler.git#bc0803a4d4b2150b8a1bbffa80270769007036c2",
+      "resolved": "git+https://github.com/jrieken/v8-profiler.git#bc0803a4d4b2150b8a1bbffa80270769007036c2"
+    },
     "xterm": {
       "version": "2.1.0",
       "from": "git+https://github.com/Tyriar/xterm.js.git#vscode-release/1.8",

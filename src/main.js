@@ -8,6 +8,12 @@
 // Perf measurements
 global.perfStartTime = Date.now();
 
+// START:profiling
+var profiler = require('v8-profiler');
+profiler.setSamplingInterval(50);
+profiler.startProfiling('1', true);
+// END:profiling
+
 var app = require('electron').app;
 var fs = require('fs');
 var path = require('path');

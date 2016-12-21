@@ -431,6 +431,17 @@ export class VSCodeWindow implements IVSCodeWindow {
 		// Load URL
 		this._win.loadURL(this.getUrl(config));
 
+		// START:profiling
+		var profile1 = require.__$__nodeRequire<any>('profiler').stopProfiling();
+		profile1.export(function (error, result) {
+			var homedir = require('os').homedir();
+			var filepath = require('path').join(homedir, 'main-' + Date.now() + '.cpuprofile');
+			require('fs').writeFileSync(filepath, result);
+			profile1.delete();
+		});
+		// END:profiling
+
+
 		// Make window visible if it did not open in N seconds because this indicates an error
 		if (!this.environmentService.isBuilt) {
 			this.showTimeoutHandle = setTimeout(() => {
