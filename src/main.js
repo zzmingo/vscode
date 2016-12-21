@@ -179,7 +179,9 @@ global.getOpenUrls = function () {
 // use '<UserData>/CachedData'-directory to store
 // node/v8 cached data.
 var nodeCachedDataDir = getNodeCachedDataDir().then(function (value) {
-	process.env['VSCODE_NODE_CACHED_DATA_DIR_' + process.pid] = value;
+	if(value) {
+		process.env['VSCODE_NODE_CACHED_DATA_DIR_' + process.pid] = value;
+	}
 });
 
 // Load our code once ready
