@@ -166,6 +166,29 @@ const enum State {
 	Details
 }
 
+class SuggestionStatus {
+
+	readonly element: HTMLElement;
+	private _disposables: IDisposable[] = [];
+
+	constructor(container: HTMLElement) {
+		this.element = append(container, $('.status'));
+		this._disposables.push({ dispose: () => { container.removeChild(this.element); } });
+	}
+
+	dispose(): void {
+		this._disposables = dispose(this._disposables);
+	}
+
+	set message(message: string) {
+		this.element.innerText = message;
+	}
+
+	layout(pxHeight: number): void {
+		this.element.style.height = `${pxHeight}px`;
+	}
+}
+
 class SuggestionDetails {
 
 	private el: HTMLElement;
@@ -305,6 +328,7 @@ export class SuggestWidget implements IContentWidget, IDelegate<ICompletionItem>
 	private element: HTMLElement;
 	private messageElement: HTMLElement;
 	private listElement: HTMLElement;
+	private status: SuggestionStatus;
 	private details: SuggestionDetails;
 	private list: List<ICompletionItem>;
 
@@ -335,6 +359,7 @@ export class SuggestWidget implements IContentWidget, IDelegate<ICompletionItem>
 
 		this.messageElement = append(this.element, $('.message'));
 		this.listElement = append(this.element, $('.tree'));
+		this.status = new SuggestionStatus(this.element);
 		this.details = new SuggestionDetails(this.element, this, this.editor);
 
 		let renderer: IRenderer<ICompletionItem, any> = instantiationService.createInstance(Renderer, this, this.editor);
@@ -552,6 +577,16 @@ export class SuggestWidget implements IContentWidget, IDelegate<ICompletionItem>
 			clearTimeout(this.loadingTimeout);
 			this.loadingTimeout = null;
 		}
+
+		// if (isAuto) {
+		// 	show(this.status.element);
+		// 	this.status.message = 'Automatic type aquisition in progress...';
+		// 	this.status.layout(this.unfocusedHeight);
+		// 	this.element.style.paddingBottom = `${this.unfocusedHeight}px`;
+		// } else {
+		// 	hide(this.status.element);
+		// 	this.element.style.paddingBottom = '';
+		// }
 
 		this.completionModel = completionModel;
 

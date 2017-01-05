@@ -156,6 +156,14 @@
 	display: inline-block;
 }
 
+.monaco-editor .suggest-widget .status {
+	position: absolute;
+	bottom: 0px;
+	border-top: 1px solid rgb(200, 200, 200);
+	width: 100%;
+	background-color: lightgoldenrodyellow;
+}
+
 .monaco-editor .suggest-widget .details {
 	height: 100%;
 	box-sizing: border-box;
