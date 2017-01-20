@@ -89,7 +89,7 @@ export function loadExperiments(accessor: ServicesAccessor): ITelemetryExperimen
 
 export function isWelcomePageEnabled(configurationService: IConfigurationService, environmentService: IEnvironmentService) {
 	const override = configurationService.lookup('telemetry.experiments.enableWelcomePage').value;
-	return typeof override === 'boolean' ? override : !environmentService.isBuilt;
+	return typeof override === 'boolean' ? override : true;
 }
 
 export function applyOverrides(configurationService: IConfigurationService, experiments: ITelemetryExperiments): ITelemetryExperiments {
