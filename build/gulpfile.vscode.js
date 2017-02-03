@@ -293,6 +293,10 @@ function packageTask(platform, arch, opts) {
 
 			all = es.merge(all, shortcut);
 		}
+		if (quality) {
+			all = es.merge(all, gulp.src('resources/code-icon.svg')
+				.pipe(rename('out/vs/workbench/parts/welcome/code-icon.svg')));
+		}
 
 		let result = all
 			.pipe(util.skipDirectories())
