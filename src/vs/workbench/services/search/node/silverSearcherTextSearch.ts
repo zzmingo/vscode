@@ -7,21 +7,18 @@
 
 import * as cp from 'child_process';
 import * as path from 'path';
-import * as strings from 'vs/base/common/strings';
 
-import { ILineMatch } from 'vs/platform/search/common/search';
-import { onUnexpectedError } from 'vs/base/common/errors';
-import { IProgress } from 'vs/platform/search/common/search';
+import { ILineMatch, IProgress } from 'vs/platform/search/common/search';
 
 import { ISerializedFileMatch, ISerializedSearchComplete, IRawSearch, ISearchEngine } from './search';
 
 export class SilverSearcherEngine implements ISearchEngine<ISerializedFileMatch[]> { // SilverSearcher
-	private static PROGRESS_FLUSH_CHUNK_SIZE = 50; // optimization: number of files to process before emitting progress event
-
 	private config: IRawSearch;
 	private pattern: string;
 
 	private isCanceled = false;
+
+	private agProc: cp.ChildProcess;
 
 	constructor(config: IRawSearch) {
 		this.config = config;
@@ -32,6 +29,8 @@ export class SilverSearcherEngine implements ISearchEngine<ISerializedFileMatch[
 
 	cancel(): void {
 		this.isCanceled = true;
+
+		this.agProc.kill();
 	}
 
 	search(onResult: (match: ISerializedFileMatch[]) => void, onProgress: (progress: IProgress) => void, done: (error: Error, complete: ISerializedSearchComplete) => void): void {
@@ -46,15 +45,15 @@ export class SilverSearcherEngine implements ISearchEngine<ISerializedFileMatch[
 
 	// 1667;12 16,47 16:            addEventListener: function Promise_addEventListener(eventType, listener, capture) {
 	searchFolder(rootFolder: string, onResult: (match: ISerializedFileMatch[]) => void, onProgress: (progress: IProgress) => void, done: (error: Error, complete: ISerializedSearchComplete) => void): void {
-		const agArgs = ['--ackmate', this.pattern];
-		console.log(`ag ${agArgs.join(' ')}`);
-		const agProc = cp.spawn('ag', agArgs, { cwd: rootFolder });
+		const agArgs = ['--ackmate', '--depth=1000', `${this.pattern}`];
+		console.log(`ag ${agArgs.join(' ')}, cwd: ${rootFolder}`);
+		this.agProc = cp.spawn('ag', agArgs, { cwd: rootFolder });
 
 		// const resultRegex = /(.*):(\d):(\d):/;
 		const resultRegex = /(\d+);((\d+ \d+,?)+):(.*)/;
 		const fileRegex = /^:(.*)/;
 		let fileMatch: FileMatch;
-		agProc.stdout.on('data', data => {
+		this.agProc.stdout.on('data', data => {
 			console.log('data');
 			console.log(data.toString().replace(/\n/g, '\\n'));
 
@@ -86,7 +85,13 @@ export class SilverSearcherEngine implements ISearchEngine<ISerializedFileMatch[
 			});
 		});
 
-		agProc.on('close', code => {
+		this.agProc.stderr.on('data', data => {
+			console.log('stderr');
+			console.log(data.toString());
+		});
+
+		this.agProc.on('close', code => {
+			this.agProc = null;
 			console.log(`closed with ${code}`);
 			done(null, {
 				limitHit: false,
