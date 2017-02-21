@@ -30,7 +30,7 @@ export class WalkThroughContentProvider implements ITextModelContentProvider, IW
 	public provideTextContent(resource: URI): TPromise<IModel> {
 		const isModule = resource.path.lastIndexOf('.') <= resource.path.lastIndexOf('/');
 		const content: TPromise<string | ITextSource2> = (isModule ? new TPromise<string>((resolve, reject) => {
-			require([resource.fsPath], content => {
+			require([resource.path], content => {
 				try {
 					resolve(content.default());
 				} catch (err) {
