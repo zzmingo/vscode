@@ -17,9 +17,10 @@ import objects = require('vs/base/common/objects');
 import scorer = require('vs/base/common/scorer');
 import strings = require('vs/base/common/strings');
 import { PPromise, TPromise } from 'vs/base/common/winjs.base';
-import { MAX_FILE_SIZE } from 'vs/platform/files/common/files';
-import { FileWalker, Engine as FileSearchEngine } from 'vs/workbench/services/search/node/fileSearch';
-import { SilverSearcherEngine } from 'vs/workbench/services/search/node/silverSearcherTextSearch';
+// import { MAX_FILE_SIZE } from 'vs/platform/files/common/files';
+import { Engine as FileSearchEngine } from 'vs/workbench/services/search/node/fileSearch';
+// import { SilverSearcherEngine } from 'vs/workbench/services/search/node/silverSearcherTextSearch';
+import { RipgrepEngine } from 'vs/workbench/services/search/node/ripgrepTextSearch';
 import { IRawSearchService, IRawSearch, IRawFileMatch, ISerializedFileMatch, ISerializedSearchProgressItem, ISerializedSearchComplete, ISearchEngine } from './search';
 import { ICachedSearchStats, IProgress } from 'vs/platform/search/common/search';
 
@@ -36,7 +37,7 @@ export class SearchService implements IRawSearchService {
 	}
 
 	public textSearch(config: IRawSearch): PPromise<ISerializedSearchComplete, ISerializedSearchProgressItem> {
-		let engine = new SilverSearcherEngine(config);
+		let engine = new RipgrepEngine(config);
 		return this.doTextSearch(engine, SearchService.BATCH_SIZE);
 	}
 
@@ -261,7 +262,7 @@ export class SearchService implements IRawSearchService {
 		});
 	}
 
-	private doTextSearch(engine: SilverSearcherEngine, batchSize: number): PPromise<ISerializedSearchComplete, IRawProgressItem<ISerializedFileMatch>> {
+	private doTextSearch(engine: RipgrepEngine, batchSize: number): PPromise<ISerializedSearchComplete, IRawProgressItem<ISerializedFileMatch>> {
 		return new PPromise<ISerializedSearchComplete, IRawProgressItem<ISerializedFileMatch>>((c, e, p) => {
 			// Use BatchedCollector to get new results to the frontend every 2s at least, until 50 results have been returned
 			const collector = new BatchedCollector<ISerializedFileMatch>(batchSize, p);
