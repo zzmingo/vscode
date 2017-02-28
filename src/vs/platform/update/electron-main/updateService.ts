@@ -198,7 +198,7 @@ export class UpdateService implements IUpdateService {
 		const config = this.configurationService.getConfiguration<{ channel: string; }>('update');
 		const channel = config && config.channel;
 
-		return channel === 'none' ? null : product.quality;
+		return channel !== 'default' ? null : product.quality;
 	}
 
 	private getUpdateFeedUrl(channel: string): string {

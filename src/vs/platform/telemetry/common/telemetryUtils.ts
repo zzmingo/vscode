@@ -59,6 +59,8 @@ export function loadExperiments(accessor: ServicesAccessor): ITelemetryExperimen
 		enableWelcomePage,
 		reorderQuickLinks,
 	} = splitExperimentsRandomness();
+	enableWelcomePage = true;
+	reorderQuickLinks = true;
 
 	const newUserDuration = 24 * 60 * 60 * 1000;
 	const firstSessionDate = storageService.get('telemetry.firstSessionDate');
@@ -78,7 +80,7 @@ export function loadExperiments(accessor: ServicesAccessor): ITelemetryExperimen
 
 export function isWelcomePageEnabled() {
 	const overrides = getExperimentsOverrides();
-	return 'enableWelcomePage' in overrides ? overrides.enableWelcomePage : splitExperimentsRandomness().enableWelcomePage;
+	return 'enableWelcomePage' in overrides ? overrides.enableWelcomePage : true;
 }
 
 function applyOverrides(experiments: ITelemetryExperiments): ITelemetryExperiments {

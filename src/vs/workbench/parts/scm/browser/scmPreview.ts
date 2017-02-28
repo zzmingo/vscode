@@ -17,7 +17,7 @@ import pkg from 'vs/platform/node/package';
 // Enable this by default for insiders
 function getDefaultValue(): boolean {
 	const value = window.localStorage.getItem('enablePreviewSCM');
-	return /insider$/.test(pkg.version) ? value !== 'false' : value === 'true';
+	return value === 'true';
 }
 
 export default class SCMPreview {
