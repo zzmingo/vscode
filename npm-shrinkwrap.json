@@ -335,7 +335,7 @@
     "node-pty": {
       "version": "0.6.2",
       "from": "node-pty@0.6.2",
-      "resolved": "https://registry.npmjs.org/node-pty/-/node-pty-0.6.2.tgz",
+      "resolved": "git+https://github.com/Tyriar/node-pty.git#be504a8654e5de68eec6d3cb8773a548410f728e",
       "dependencies": {
         "nan": {
           "version": "2.5.0",
