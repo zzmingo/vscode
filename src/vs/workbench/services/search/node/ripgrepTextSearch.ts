@@ -53,7 +53,7 @@ export class RipgrepEngine implements ISearchEngine<ISerializedFileMatch> {
 			this.postProcessExclusions = glob.parseToAsync(rgArgs.siblingClauses, { trimForExclusions: true });
 		}
 
-		// console.log(`rg ${rgArgs.args.join(' ')}, cwd: ${rootFolder}`);
+		console.log(`rg ${rgArgs.args.join(' ')}, cwd: ${rootFolder}`);
 		this.rgProc = cp.spawn(rgPath, rgArgs.args, { cwd: rootFolder });
 
 		this.ripgrepParser = new RipgrepParser(this.config.maxResults, rootFolder);
@@ -144,9 +144,11 @@ export class RipgrepParser extends EventEmitter {
 					this.onResult();
 				}
 			} else if (r = outputLine.match(RipgrepParser.RESULT_REGEX)) {
+				console.log(outputLine);
 				// Line is a result - add to collected results for the current file path
 				this.handleMatchLine(outputLine, parseInt(r[1]) - 1, r[2]);
 			} else if (r = outputLine.match(RipgrepParser.FILE_REGEX)) {
+				console.log(outputLine);
 				// Line is a file path - send all collected results for the previous file path
 				if (this.fileMatch) {
 					// TODO@Rob Check fileMatch against other exclude globs
