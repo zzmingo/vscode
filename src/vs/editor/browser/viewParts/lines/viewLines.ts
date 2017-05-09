@@ -18,7 +18,7 @@ import { IViewLines, HorizontalRange, LineVisibleRanges } from 'vs/editor/common
 import { IViewLayout, Viewport } from 'vs/editor/common/viewModel/viewModel';
 import { ViewPart, PartFingerprint, PartFingerprints } from 'vs/editor/browser/view/viewPart';
 import * as viewEvents from 'vs/editor/common/view/viewEvents';
-import { VerticalRevealType } from "vs/editor/common/controller/cursorEvents";
+import { VerticalRevealType } from 'vs/editor/common/controller/cursorEvents';
 
 class LastRenderedData {
 
@@ -78,7 +78,7 @@ export class ViewLines extends ViewPart implements IVisibleLinesHost<ViewLine>, 
 		this._lineHeight = this._context.configuration.editor.lineHeight;
 		this._isViewportWrapping = this._context.configuration.editor.wrappingInfo.isViewportWrapping;
 		this._revealHorizontalRightPadding = this._context.configuration.editor.viewInfo.revealHorizontalRightPadding;
-		this._canUseTranslate3d = this._context.configuration.editor.viewInfo.canUseTranslate3d;
+		this._canUseTranslate3d = this._context.configuration.editor.canUseTranslate3d;
 		this._viewLineOptions = new ViewLineOptions(this._context.configuration);
 
 		PartFingerprints.write(this.domNode, PartFingerprint.ViewLines);
@@ -127,11 +127,11 @@ export class ViewLines extends ViewPart implements IVisibleLinesHost<ViewLine>, 
 		if (e.wrappingInfo) {
 			this._isViewportWrapping = this._context.configuration.editor.wrappingInfo.isViewportWrapping;
 		}
-		if (e.viewInfo.revealHorizontalRightPadding) {
+		if (e.viewInfo) {
 			this._revealHorizontalRightPadding = this._context.configuration.editor.viewInfo.revealHorizontalRightPadding;
 		}
-		if (e.viewInfo.canUseTranslate3d) {
-			this._canUseTranslate3d = this._context.configuration.editor.viewInfo.canUseTranslate3d;
+		if (e.canUseTranslate3d) {
+			this._canUseTranslate3d = this._context.configuration.editor.canUseTranslate3d;
 		}
 		if (e.fontInfo) {
 			Configuration.applyFontInfo(this.domNode, this._context.configuration.editor.fontInfo);

@@ -12,10 +12,8 @@ import { ServicesAccessor, IInstantiationService } from 'vs/platform/instantiati
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { IContextKey, IContextKeyServiceTarget, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { CommonEditorConfiguration } from 'vs/editor/common/config/commonEditorConfig';
-import { DefaultConfig } from 'vs/editor/common/config/defaultConfig';
 import { Cursor } from 'vs/editor/common/controller/cursor';
-import { CursorColumns } from 'vs/editor/common/controller/cursorCommon';
-import { IViewModelHelper } from 'vs/editor/common/controller/oneCursor';
+import { CursorColumns, IViewModelHelper, ICursors } from 'vs/editor/common/controller/cursorCommon';
 import { Position, IPosition } from 'vs/editor/common/core/position';
 import { Range, IRange } from 'vs/editor/common/core/range';
 import { Selection, ISelection } from 'vs/editor/common/core/selection';
@@ -29,8 +27,8 @@ import {
 	IModelContentChangedEvent, IModelDecorationsChangedEvent,
 	IModelLanguageChangedEvent, IModelOptionsChangedEvent, TextModelEventType
 } from 'vs/editor/common/model/textModelEvents';
-import * as editorOptions from "vs/editor/common/config/editorOptions";
-import { CursorEventType, ICursorPositionChangedEvent, VerticalRevealType, ICursorSelectionChangedEvent } from "vs/editor/common/controller/cursorEvents";
+import * as editorOptions from 'vs/editor/common/config/editorOptions';
+import { CursorEventType, ICursorPositionChangedEvent, VerticalRevealType, ICursorSelectionChangedEvent } from 'vs/editor/common/controller/cursorEvents';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 
 let EDITOR_ID = 0;
@@ -127,9 +125,6 @@ export abstract class CommonCodeEditor extends Disposable implements editorCommo
 		this._decorationTypeSubtypes = {};
 
 		options = options || {};
-		if (typeof options.ariaLabel === 'undefined') {
-			options.ariaLabel = DefaultConfig.editor.ariaLabel;
-		}
 		this._configuration = this._register(this._createConfiguration(options));
 		this._register(this._configuration.onDidChange((e) => {
 			this._onDidChangeConfiguration.fire(e);
@@ -192,7 +187,7 @@ export abstract class CommonCodeEditor extends Disposable implements editorCommo
 	}
 
 	public getConfiguration(): editorOptions.InternalEditorOptions {
-		return this._configuration.editorClone;
+		return this._configuration.editor;
 	}
 
 	public getRawConfiguration(): editorOptions.IEditorOptions {
@@ -244,6 +239,8 @@ export abstract class CommonCodeEditor extends Disposable implements editorCommo
 	public abstract getCenteredRangeInViewport(): Range;
 
 	protected abstract _getCompletelyVisibleViewRange(): Range;
+	protected abstract _getCompletelyVisibleViewRangeAtScrollTop(scrollTop: number): Range;
+	protected abstract _getVerticalOffsetForViewLineNumber(viewLineNumber: number): number;
 
 	public getVisibleColumnFromPosition(rawPosition: IPosition): number {
 		if (!this.model) {
@@ -290,7 +287,7 @@ export abstract class CommonCodeEditor extends Disposable implements editorCommo
 		}
 		let validatedRange = this.model.validateRange(range);
 
-		this.cursor.emitCursorRevealRange(validatedRange, null, verticalType, revealHorizontal, false);
+		this.cursor.emitCursorRevealRange(validatedRange, null, verticalType, revealHorizontal);
 	}
 
 	public revealLine(lineNumber: number): void {
@@ -603,6 +600,10 @@ export abstract class CommonCodeEditor extends Disposable implements editorCommo
 		}
 	}
 
+	public _getCursors(): ICursors {
+		return this.cursor;
+	}
+
 	public executeCommand(source: string, command: editorCommon.ICommand): void {
 		if (!this.cursor) {
 			return;
@@ -776,8 +777,17 @@ export abstract class CommonCodeEditor extends Disposable implements editorCommo
 			let viewModelHelper: IViewModelHelper = {
 				viewModel: this.viewModel,
 				coordinatesConverter: this.viewModel.coordinatesConverter,
+				getScrollTop: (): number => {
+					return this.getScrollTop();
+				},
 				getCompletelyVisibleViewRange: (): Range => {
 					return this._getCompletelyVisibleViewRange();
+				},
+				getCompletelyVisibleViewRangeAtScrollTop: (scrollTop: number): Range => {
+					return this._getCompletelyVisibleViewRangeAtScrollTop(scrollTop);
+				},
+				getVerticalOffsetForViewLineNumber: (viewLineNumber: number): number => {
+					return this._getVerticalOffsetForViewLineNumber(viewLineNumber);
 				}
 			};
 
@@ -927,12 +937,12 @@ class EditorContextKeysManager extends Disposable {
 		this._editor = editor;
 
 		this._editorId = contextKeyService.createKey('editorId', editor.getId());
-		this._editorFocus = EditorContextKeys.Focus.bindTo(contextKeyService);
-		this._editorTextFocus = EditorContextKeys.TextFocus.bindTo(contextKeyService);
-		this._editorTabMovesFocus = EditorContextKeys.TabMovesFocus.bindTo(contextKeyService);
-		this._editorReadonly = EditorContextKeys.ReadOnly.bindTo(contextKeyService);
-		this._hasMultipleSelections = EditorContextKeys.HasMultipleSelections.bindTo(contextKeyService);
-		this._hasNonEmptySelection = EditorContextKeys.HasNonEmptySelection.bindTo(contextKeyService);
+		this._editorFocus = EditorContextKeys.focus.bindTo(contextKeyService);
+		this._editorTextFocus = EditorContextKeys.textFocus.bindTo(contextKeyService);
+		this._editorTabMovesFocus = EditorContextKeys.tabMovesFocus.bindTo(contextKeyService);
+		this._editorReadonly = EditorContextKeys.readOnly.bindTo(contextKeyService);
+		this._hasMultipleSelections = EditorContextKeys.hasMultipleSelections.bindTo(contextKeyService);
+		this._hasNonEmptySelection = EditorContextKeys.hasNonEmptySelection.bindTo(contextKeyService);
 
 		this._register(this._editor.onDidChangeConfiguration(() => this._updateFromConfig()));
 		this._register(this._editor.onDidChangeCursorSelection(() => this._updateFromSelection()));

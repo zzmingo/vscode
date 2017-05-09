@@ -16,7 +16,7 @@ import { TimeoutTimer, IntervalTimer } from 'vs/base/common/async';
 import * as viewEvents from 'vs/editor/common/view/viewEvents';
 import { registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { editorCursor } from 'vs/editor/common/view/editorColorRegistry';
-import { TextEditorCursorBlinkingStyle, TextEditorCursorStyle } from "vs/editor/common/config/editorOptions";
+import { TextEditorCursorBlinkingStyle, TextEditorCursorStyle } from 'vs/editor/common/config/editorOptions';
 
 export class ViewCursors extends ViewPart {
 
@@ -84,16 +84,14 @@ export class ViewCursors extends ViewPart {
 		if (e.readOnly) {
 			this._readOnly = this._context.configuration.editor.readOnly;
 		}
-		if (e.viewInfo.cursorBlinking) {
+		if (e.viewInfo) {
 			this._cursorBlinking = this._context.configuration.editor.viewInfo.cursorBlinking;
-		}
-		if (e.viewInfo.cursorStyle) {
 			this._cursorStyle = this._context.configuration.editor.viewInfo.cursorStyle;
 		}
 
 		this._primaryCursor.onConfigurationChanged(e);
 		this._updateBlinking();
-		if (e.viewInfo.cursorStyle || e.viewInfo.cursorBlinking) {
+		if (e.viewInfo) {
 			this._updateDomClassName();
 		}
 		for (let i = 0, len = this._secondaryCursors.length; i < len; i++) {
@@ -138,7 +136,7 @@ export class ViewCursors extends ViewPart {
 	}
 	public onDecorationsChanged(e: viewEvents.ViewDecorationsChangedEvent): boolean {
 		// true for inline decorations that can end up relayouting text
-		return true;//e.inlineDecorationsChanged;
+		return true;
 	}
 	public onFlushed(e: viewEvents.ViewFlushedEvent): boolean {
 		this._primaryCursor.onFlushed();

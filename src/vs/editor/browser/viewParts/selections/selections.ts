@@ -7,7 +7,7 @@
 
 import 'vs/css!./selections';
 import { registerThemingParticipant } from 'vs/platform/theme/common/themeService';
-import { editorSelection, editorInactiveSelection, highContrastOutline } from 'vs/platform/theme/common/colorRegistry';
+import { editorSelection, editorInactiveSelection, activeContrastBorder } from 'vs/platform/theme/common/colorRegistry';
 import { DynamicViewOverlay } from 'vs/editor/browser/view/dynamicViewOverlay';
 import { ViewContext } from 'vs/editor/common/view/viewContext';
 import { HorizontalRange, LineVisibleRanges, RenderingContext } from 'vs/editor/common/view/renderingContext';
@@ -105,13 +105,10 @@ export class SelectionsOverlay extends DynamicViewOverlay {
 		if (e.lineHeight) {
 			this._lineHeight = this._context.configuration.editor.lineHeight;
 		}
-		if (e.viewInfo.roundedSelection) {
+		if (e.viewInfo) {
 			this._roundedSelection = this._context.configuration.editor.viewInfo.roundedSelection;
 		}
 		return true;
-	}
-	public onCursorPositionChanged(e: viewEvents.ViewCursorPositionChangedEvent): boolean {
-		return false;
 	}
 	public onCursorSelectionChanged(e: viewEvents.ViewCursorSelectionChangedEvent): boolean {
 		this._selections = [e.selection];
@@ -133,9 +130,6 @@ export class SelectionsOverlay extends DynamicViewOverlay {
 	}
 	public onLinesInserted(e: viewEvents.ViewLinesInsertedEvent): boolean {
 		return true;
-	}
-	public onRevealRangeRequest(e: viewEvents.ViewRevealRangeRequestEvent): boolean {
-		return false;
 	}
 	public onScrollChanged(e: viewEvents.ViewScrollChangedEvent): boolean {
 		return e.scrollTopChanged;
@@ -410,7 +404,7 @@ registerThemingParticipant((theme, collector) => {
 		collector.addRule(`.monaco-editor.${theme.selector} .selected-text { background-color: ${editorInactiveSelectionColor}; }`);
 	}
 	// IE/Edge specific rules
-	let outline = theme.getColor(highContrastOutline);
+	let outline = theme.getColor(activeContrastBorder);
 	if (outline) {
 		collector.addRule(`.monaco-editor.ie.hc-black .view-overlays.focused	.selected-text { background: none; border: 2px solid ${outline}; }`);
 		collector.addRule(`.monaco-editor.edge.hc-black	.view-overlays.focused	.selected-text { background: none; border: 2px solid ${outline}; }`);

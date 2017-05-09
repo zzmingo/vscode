@@ -23,8 +23,8 @@ import { ICodeEditor, IDiffEditor } from 'vs/editor/browser/editorBrowser';
 import { IStandaloneThemeService } from 'vs/editor/common/services/standaloneThemeService';
 import { InternalEditorAction } from 'vs/editor/common/editorAction';
 import { MenuId, MenuRegistry, IMenuItem } from 'vs/platform/actions/common/actions';
-import { IDiffEditorOptions, IEditorOptions } from "vs/editor/common/config/editorOptions";
-import { IThemeService } from "vs/platform/theme/common/themeService";
+import { IDiffEditorOptions, IEditorOptions } from 'vs/editor/common/config/editorOptions';
+import { IThemeService } from 'vs/platform/theme/common/themeService';
 
 /**
  * The options to create an editor.
@@ -131,7 +131,8 @@ export class StandaloneCodeEditor extends CodeEditor implements IStandaloneCodeE
 		const contextMenuGroupId = _descriptor.contextMenuGroupId || null;
 		const contextMenuOrder = _descriptor.contextMenuOrder || 0;
 		const run = (): TPromise<void> => {
-			return TPromise.as(_descriptor.run(this));
+			const r = _descriptor.run(this);
+			return r ? r : TPromise.as(void 0);
 		};
 
 
@@ -210,20 +211,18 @@ export class StandaloneEditor extends StandaloneCodeEditor implements IStandalon
 		if (typeof options.theme === 'string') {
 			options.theme = standaloneThemeService.setTheme(options.theme);
 		}
-
+		let model: IModel = options.model;
+		delete options.model;
 		super(domElement, options, instantiationService, codeEditorService, commandService, contextKeyService, keybindingService);
 
 		this._contextViewService = <IEditorContextViewService>contextViewService;
 		this._standaloneThemeService = standaloneThemeService;
 		this._register(toDispose);
 
-		let model: IModel = null;
-		if (typeof options.model === 'undefined') {
+		if (typeof model === 'undefined') {
 			model = (<any>self).monaco.editor.createModel(options.value || '', options.language || 'text/plain');
 			this._ownsModel = true;
 		} else {
-			model = options.model;
-			delete options.model;
 			this._ownsModel = false;
 		}
 

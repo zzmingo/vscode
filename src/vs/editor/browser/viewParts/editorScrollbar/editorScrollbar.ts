@@ -32,13 +32,13 @@ export class EditorScrollbar extends ViewPart {
 
 		this.scrollable = scrollable;
 
-		const viewInfo = this._context.configuration.editor.viewInfo;
-		const configScrollbarOpts = viewInfo.scrollbar;
+		const editor = this._context.configuration.editor;
+		const configScrollbarOpts = editor.viewInfo.scrollbar;
 
 		let scrollbarOptions: ScrollableElementCreationOptions = {
-			canUseTranslate3d: viewInfo.canUseTranslate3d,
+			canUseTranslate3d: editor.canUseTranslate3d,
 			listenOnDomNode: viewDomNode.domNode,
-			className: 'editor-scrollable' + ' ' + viewInfo.theme,
+			className: 'editor-scrollable' + ' ' + editor.viewInfo.theme,
 			useShadows: false,
 			lazyRender: true,
 
@@ -126,14 +126,14 @@ export class EditorScrollbar extends ViewPart {
 	// --- begin event handlers
 
 	public onConfigurationChanged(e: viewEvents.ViewConfigurationChangedEvent): boolean {
-		const viewInfo = this._context.configuration.editor.viewInfo;
+		const editor = this._context.configuration.editor;
 
-		this.scrollbar.updateClassName('editor-scrollable' + ' ' + viewInfo.theme);
-		if (e.viewInfo.scrollbar || e.viewInfo.canUseTranslate3d) {
+		this.scrollbar.updateClassName('editor-scrollable' + ' ' + editor.viewInfo.theme);
+		if (e.viewInfo || e.canUseTranslate3d) {
 			let newOpts: ScrollableElementChangeOptions = {
-				canUseTranslate3d: viewInfo.canUseTranslate3d,
-				handleMouseWheel: viewInfo.scrollbar.handleMouseWheel,
-				mouseWheelScrollSensitivity: viewInfo.scrollbar.mouseWheelScrollSensitivity
+				canUseTranslate3d: editor.canUseTranslate3d,
+				handleMouseWheel: editor.viewInfo.scrollbar.handleMouseWheel,
+				mouseWheelScrollSensitivity: editor.viewInfo.scrollbar.mouseWheelScrollSensitivity
 			};
 			this.scrollbar.updateOptions(newOpts);
 		}
@@ -142,47 +142,8 @@ export class EditorScrollbar extends ViewPart {
 		}
 		return true;
 	}
-	public onCursorPositionChanged(e: viewEvents.ViewCursorPositionChangedEvent): boolean {
-		return false;
-	}
-	public onCursorSelectionChanged(e: viewEvents.ViewCursorSelectionChangedEvent): boolean {
-		return false;
-	}
-	public onDecorationsChanged(e: viewEvents.ViewDecorationsChangedEvent): boolean {
-		return false;
-	}
-	public onFlushed(e: viewEvents.ViewFlushedEvent): boolean {
-		return false;
-	}
-	public onFocusChanged(e: viewEvents.ViewFocusChangedEvent): boolean {
-		return false;
-	}
-	public onLineMappingChanged(e: viewEvents.ViewLineMappingChangedEvent): boolean {
-		return false;
-	}
-	public onLinesChanged(e: viewEvents.ViewLinesChangedEvent): boolean {
-		return false;
-	}
-	public onLinesDeleted(e: viewEvents.ViewLinesDeletedEvent): boolean {
-		return false;
-	}
-	public onLinesInserted(e: viewEvents.ViewLinesInsertedEvent): boolean {
-		return false;
-	}
-	public onRevealRangeRequest(e: viewEvents.ViewRevealRangeRequestEvent): boolean {
-		return false;
-	}
 	public onScrollChanged(e: viewEvents.ViewScrollChangedEvent): boolean {
 		return true;
-	}
-	public onScrollRequest(e: viewEvents.ViewScrollRequestEvent): boolean {
-		return false;
-	}
-	public onTokensChanged(e: viewEvents.ViewTokensChangedEvent): boolean {
-		return false;
-	}
-	public onZonesChanged(e: viewEvents.ViewZonesChangedEvent): boolean {
-		return false;
 	}
 
 	// --- end event handlers

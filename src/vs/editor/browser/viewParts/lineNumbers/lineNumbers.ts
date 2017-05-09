@@ -6,7 +6,7 @@
 'use strict';
 
 import 'vs/css!./lineNumbers';
-import { editorLineNumbers } from "vs/editor/common/view/editorColorRegistry";
+import { editorLineNumbers } from 'vs/editor/common/view/editorColorRegistry';
 import { registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import * as platform from 'vs/base/common/platform';
 import { DynamicViewOverlay } from 'vs/editor/browser/view/dynamicViewOverlay';
@@ -51,10 +51,8 @@ export class LineNumbersOverlay extends DynamicViewOverlay {
 		if (e.lineHeight) {
 			this._lineHeight = this._context.configuration.editor.lineHeight;
 		}
-		if (e.viewInfo.renderLineNumbers) {
+		if (e.viewInfo) {
 			this._renderLineNumbers = this._context.configuration.editor.viewInfo.renderLineNumbers;
-		}
-		if (e.viewInfo.renderRelativeLineNumbers) {
 			this._renderRelativeLineNumbers = this._context.configuration.editor.viewInfo.renderRelativeLineNumbers;
 		}
 		if (e.layoutInfo) {
@@ -69,12 +67,6 @@ export class LineNumbersOverlay extends DynamicViewOverlay {
 		}
 		return false;
 	}
-	public onCursorSelectionChanged(e: viewEvents.ViewCursorSelectionChangedEvent): boolean {
-		return false;
-	}
-	public onDecorationsChanged(e: viewEvents.ViewDecorationsChangedEvent): boolean {
-		return false;
-	}
 	public onFlushed(e: viewEvents.ViewFlushedEvent): boolean {
 		return true;
 	}
@@ -86,9 +78,6 @@ export class LineNumbersOverlay extends DynamicViewOverlay {
 	}
 	public onLinesInserted(e: viewEvents.ViewLinesInsertedEvent): boolean {
 		return true;
-	}
-	public onRevealRangeRequest(e: viewEvents.ViewRevealRangeRequestEvent): boolean {
-		return false;
 	}
 	public onScrollChanged(e: viewEvents.ViewScrollChangedEvent): boolean {
 		return e.scrollTopChanged;

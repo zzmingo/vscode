@@ -27,11 +27,12 @@ class ExpandAbbreviationAction extends BasicEmmetEditorAction {
 			{
 				primary: KeyCode.Tab,
 				kbExpr: ContextKeyExpr.and(
-					EditorContextKeys.TextFocus,
-					EditorContextKeys.HasOnlyEmptySelection,
-					EditorContextKeys.HasSingleSelection,
-					EditorContextKeys.TabDoesNotMoveFocus,
-					ContextKeyExpr.has('config.emmet.triggerExpansionOnTab')
+					EditorContextKeys.textFocus,
+					EditorContextKeys.hasOnlyEmptySelection,
+					EditorContextKeys.hasSingleSelection,
+					EditorContextKeys.tabDoesNotMoveFocus,
+					ContextKeyExpr.has('config.emmet.triggerExpansionOnTab'),
+					ContextKeyExpr.not('config.emmet.suggestExpandedAbbreviation')
 				)
 			}
 		);

@@ -11,7 +11,6 @@ import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 import * as strings from 'vs/base/common/strings';
 import URI from 'vs/base/common/uri';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { DefaultConfig } from 'vs/editor/common/config/defaultConfig';
 import { $, Dimension, Builder } from 'vs/base/browser/builder';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
 import { EditorOptions } from 'vs/workbench/common/editor';
@@ -33,12 +32,12 @@ import { Scope } from 'vs/workbench/common/memento';
 import { RawContextKey, IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { once } from 'vs/base/common/event';
-import SCMPreview from 'vs/workbench/parts/scm/browser/scmPreview';
 import { isObject } from 'vs/base/common/types';
-import { ICommandService } from 'vs/platform/commands/common/commands';
+import { ICommandService, CommandsRegistry } from 'vs/platform/commands/common/commands';
 import { ICodeEditorService } from 'vs/editor/common/services/codeEditorService';
-import { Parts, IPartService } from "vs/workbench/services/part/common/partService";
-import { IEditorOptions } from "vs/editor/common/config/editorOptions";
+import { Parts, IPartService } from 'vs/workbench/services/part/common/partService';
+import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
+import { IMessageService, Severity } from 'vs/platform/message/common/message';
 
 export const WALK_THROUGH_FOCUS = new RawContextKey<boolean>('interactivePlaygroundFocus', false);
 
@@ -102,6 +101,7 @@ export class WalkThroughPart extends BaseEditor {
 		@IContextKeyService private contextKeyService: IContextKeyService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IModeService private modeService: IModeService,
+		@IMessageService private messageService: IMessageService,
 		@IPartService private partService: IPartService
 	) {
 		super(WalkThroughPart.ID, telemetryService, themeService);
@@ -208,6 +208,10 @@ export class WalkThroughPart extends BaseEditor {
 				uri: uri.toString(true),
 				from: this.input instanceof WalkThroughInput ? this.input.getTelemetryFrom() : undefined
 			});
+		}
+		if (uri.scheme === 'command' && uri.path === 'git.clone' && !CommandsRegistry.getCommand('git.clone')) {
+			this.messageService.show(Severity.Info, localize('walkThrough.gitNotFound', "It looks like Git is not installed on your system."));
+			return;
 		}
 		this.openerService.open(this.addFrom(uri));
 	}
@@ -413,7 +417,13 @@ export class WalkThroughPart extends BaseEditor {
 		return {
 			...isObject(config) ? config : Object.create(null),
 			scrollBeyondLastLine: false,
-			scrollbar: DefaultConfig.editor.scrollbar,
+			scrollbar: {
+				verticalScrollbarSize: 14,
+				horizontal: 'auto',
+				useShadows: true,
+				verticalHasArrows: false,
+				horizontalHasArrows: false
+			},
 			overviewRulerLanes: 3,
 			fixedOverflowWidgets: true,
 			lineNumbersMinChars: 1,
@@ -424,7 +434,9 @@ export class WalkThroughPart extends BaseEditor {
 
 	private updateMarkerClasses() {
 		const innerContent = this.content.firstElementChild;
-		if (SCMPreview.enabled && innerContent) {
+
+		// TODO@christof
+		if (true && innerContent) {
 			innerContent.classList.add('scmEnabled');
 		}
 	}

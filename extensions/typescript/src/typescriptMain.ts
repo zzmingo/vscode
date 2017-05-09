@@ -9,7 +9,7 @@
  * ------------------------------------------------------------------------------------------ */
 'use strict';
 
-import { env, languages, commands, workspace, window, ExtensionContext, Memento, IndentAction, Diagnostic, DiagnosticCollection, Range, Disposable, Uri, MessageItem, TextEditor, FileSystemWatcher } from 'vscode';
+import { env, languages, commands, workspace, window, ExtensionContext, Memento, IndentAction, Diagnostic, DiagnosticCollection, Range, Disposable, Uri, MessageItem, TextEditor, DiagnosticSeverity } from 'vscode';
 
 // This must be the first statement otherwise modules might got loaded with
 // the wrong locale.
@@ -20,6 +20,7 @@ const localize = nls.loadMessageBundle();
 import * as path from 'path';
 
 import * as Proto from './protocol';
+import * as PConst from './protocol.const';
 
 import TypeScriptServiceClient from './typescriptServiceClient';
 import { ITypescriptServiceClientHost } from './typescriptService';
@@ -40,6 +41,8 @@ import WorkspaceSymbolProvider from './features/workspaceSymbolProvider';
 import CodeActionProvider from './features/codeActionProvider';
 import ReferenceCodeLensProvider from './features/referencesCodeLensProvider';
 import { JsDocCompletionProvider, TryCompleteJsDocCommand } from './features/jsDocCompletionProvider';
+import { DirectiveCommentCompletionProvider } from './features/directiveCommentCompletionProvider';
+
 import ImplementationCodeLensProvider from './features/implementationsCodeLensProvider';
 
 import * as BuildStatus from './utils/buildStatus';
@@ -83,7 +86,7 @@ export function activate(context: ExtensionContext): void {
 			id: 'javascript',
 			diagnosticSource: 'js',
 			modeIds: [MODE_ID_JS, MODE_ID_JSX],
-			extensions: ['.js', '.jsx'],
+			extensions: ['.js', '.jsx', '.es6', '.mjs'],
 			configFile: 'jsconfig.json'
 		}
 	], context.storagePath, context.globalState, context.workspaceState);
@@ -122,7 +125,7 @@ export function activate(context: ExtensionContext): void {
 	window.onDidChangeActiveTextEditor(VersionStatus.showHideStatus, null, context.subscriptions);
 	client.onReady().then(() => {
 		context.subscriptions.push(ProjectStatus.create(client,
-			path => new Promise(resolve => setTimeout(() => resolve(clientHost.handles(path)), 750)),
+			path => new Promise<boolean>(resolve => setTimeout(() => resolve(clientHost.handles(path)), 750)),
 			context.workspaceState));
 	}, () => {
 		// Nothing to do here. The client did show a message;
@@ -150,6 +153,8 @@ class LanguageProvider {
 	private _validate: boolean = true;
 
 	private readonly disposables: Disposable[] = [];
+
+	private versionDependentDisposables: Disposable[] = [];
 
 	constructor(
 		private readonly client: TypeScriptServiceClient,
@@ -192,6 +197,13 @@ class LanguageProvider {
 			}
 		}
 
+		while (this.versionDependentDisposables.length) {
+			const obj = this.versionDependentDisposables.pop();
+			if (obj) {
+				obj.dispose();
+			}
+		}
+
 		this.typingsStatus.dispose();
 		this.currentDiagnostics.dispose();
 		this.bufferSyncSupport.dispose();
@@ -204,6 +216,8 @@ class LanguageProvider {
 		this.completionItemProvider = new CompletionItemProvider(client, this.typingsStatus);
 		this.completionItemProvider.updateConfiguration();
 		this.disposables.push(languages.registerCompletionItemProvider(selector, this.completionItemProvider, '.'));
+
+		this.disposables.push(languages.registerCompletionItemProvider(selector, new DirectiveCommentCompletionProvider(client), '@'));
 
 		this.formattingProvider = new FormattingProvider(client);
 		this.formattingProvider.updateConfiguration(config);
@@ -234,13 +248,7 @@ class LanguageProvider {
 
 		this.disposables.push(languages.registerCodeActionsProvider(selector, new CodeActionProvider(client, this.description.id)));
 
-		if (client.apiVersion.has220Features()) {
-			this.disposables.push(languages.registerImplementationProvider(selector, new ImplementationProvider(client)));
-		}
-
-		if (client.apiVersion.has213Features()) {
-			this.disposables.push(languages.registerTypeDefinitionProvider(selector, new TypeDefintionProvider(client)));
-		}
+		this.registerVersionDependentProviders();
 
 		this.description.modeIds.forEach(modeId => {
 			this.disposables.push(languages.registerWorkspaceSymbolProvider(new WorkspaceSymbolProvider(client, modeId)));
@@ -250,7 +258,7 @@ class LanguageProvider {
 					// ^(.*\*/)?\s*\}.*$
 					decreaseIndentPattern: /^(.*\*\/)?\s*\}.*$/,
 					// ^.*\{[^}"']*$
-					increaseIndentPattern: /^.*\{[^}"']*$/
+					increaseIndentPattern: /^.*\{[^}"'`]*$/
 				},
 				wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 				onEnterRules: [
@@ -362,6 +370,30 @@ class LanguageProvider {
 		this.syntaxDiagnostics = Object.create(null);
 		this.bufferSyncSupport.reOpenDocuments();
 		this.bufferSyncSupport.requestAllDiagnostics();
+		this.registerVersionDependentProviders();
+	}
+
+	private registerVersionDependentProviders(): void {
+		while (this.versionDependentDisposables.length) {
+			const obj = this.versionDependentDisposables.pop();
+			if (obj) {
+				obj.dispose();
+			}
+		}
+
+		this.versionDependentDisposables = [];
+		if (!this.client) {
+			return;
+		}
+
+		const selector = this.description.modeIds;
+		if (this.client.apiVersion.has220Features()) {
+			this.versionDependentDisposables.push(languages.registerImplementationProvider(selector, new ImplementationProvider(this.client)));
+		}
+
+		if (this.client.apiVersion.has213Features()) {
+			this.versionDependentDisposables.push(languages.registerTypeDefinitionProvider(selector, new TypeDefintionProvider(this.client)));
+		}
 	}
 
 	public triggerAllDiagnostics(): void {
@@ -388,9 +420,8 @@ class LanguageProvider {
 
 class TypeScriptServiceClientHost implements ITypescriptServiceClientHost {
 	private client: TypeScriptServiceClient;
-	private languages: LanguageProvider[];
+	private languages: LanguageProvider[] = [];
 	private languagePerId: ObjectMap<LanguageProvider>;
-	private configFileWatcher: FileSystemWatcher;
 	private readonly disposables: Disposable[] = [];
 
 	constructor(
@@ -415,7 +446,6 @@ class TypeScriptServiceClientHost implements ITypescriptServiceClientHost {
 		configFileWatcher.onDidChange(handleProjectChange, this, this.disposables);
 
 		this.client = new TypeScriptServiceClient(this, storagePath, globalState, workspaceState, this.disposables);
-		this.languages = [];
 		this.languagePerId = Object.create(null);
 		for (const description of descriptions) {
 			const manager = new LanguageProvider(this.client, description);
@@ -432,7 +462,6 @@ class TypeScriptServiceClientHost implements ITypescriptServiceClientHost {
 				obj.dispose();
 			}
 		}
-		this.configFileWatcher.dispose();
 	}
 
 	public get serviceClient(): TypeScriptServiceClient {
@@ -628,13 +657,27 @@ class TypeScriptServiceClientHost implements ITypescriptServiceClientHost {
 	private createMarkerDatas(diagnostics: Proto.Diagnostic[], source: string): Diagnostic[] {
 		const result: Diagnostic[] = [];
 		for (let diagnostic of diagnostics) {
-			let { start, end, text } = diagnostic;
-			let range = new Range(start.line - 1, start.offset - 1, end.line - 1, end.offset - 1);
-			let converted = new Diagnostic(range, text);
-			converted.source = source;
+			const { start, end, text } = diagnostic;
+			const range = new Range(start.line - 1, start.offset - 1, end.line - 1, end.offset - 1);
+			const converted = new Diagnostic(range, text);
+			converted.severity = this.getDiagnosticSeverity(diagnostic);
+			converted.source = diagnostic.source || source;
 			converted.code = '' + diagnostic.code;
 			result.push(converted);
 		}
 		return result;
+	}
+
+	private getDiagnosticSeverity(diagnostic: Proto.Diagnostic): DiagnosticSeverity {
+		switch (diagnostic.category) {
+			case PConst.DiagnosticCategory.error:
+				return DiagnosticSeverity.Error;
+
+			case PConst.DiagnosticCategory.warning:
+				return DiagnosticSeverity.Warning;
+
+			default:
+				return DiagnosticSeverity.Error;
+		}
 	}
 }

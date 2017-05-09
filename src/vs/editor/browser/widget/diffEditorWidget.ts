@@ -16,7 +16,6 @@ import { ISashEvent, IVerticalSashLayoutProvider, Sash } from 'vs/base/browser/u
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { ICodeEditorService } from 'vs/editor/common/services/codeEditorService';
-import { DefaultConfig } from 'vs/editor/common/config/defaultConfig';
 import { Range, IRange } from 'vs/editor/common/core/range';
 import * as editorCommon from 'vs/editor/common/editorCommon';
 import { IEditorWorkerService } from 'vs/editor/common/services/editorWorkerService';
@@ -32,12 +31,12 @@ import { InlineDecoration } from 'vs/editor/common/viewModel/viewModel';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { ColorId, MetadataConsts, FontStyle } from 'vs/editor/common/modes';
 import Event, { Emitter } from 'vs/base/common/event';
-import * as editorOptions from "vs/editor/common/config/editorOptions";
-import { registerThemingParticipant, IThemeService, ITheme } from "vs/platform/theme/common/themeService";
-import { registerColor } from "vs/platform/theme/common/colorRegistry";
-import { Color, RGBA } from "vs/base/common/color";
-import { OverviewRulerZone } from "vs/editor/common/view/overviewZoneManager";
-import { IEditorWhitespace } from "vs/editor/common/viewLayout/whitespaceComputer";
+import * as editorOptions from 'vs/editor/common/config/editorOptions';
+import { registerThemingParticipant, IThemeService, ITheme } from 'vs/platform/theme/common/themeService';
+import { registerColor, scrollbarShadow } from 'vs/platform/theme/common/colorRegistry';
+import { Color, RGBA } from 'vs/base/common/color';
+import { OverviewRulerZone } from 'vs/editor/common/view/overviewZoneManager';
+import { IEditorWhitespace } from 'vs/editor/common/viewLayout/whitespaceComputer';
 
 interface IEditorDiffDecorations {
 	decorations: editorCommon.IModelDeltaDecoration[];
@@ -214,7 +213,7 @@ export class DiffEditorWidget extends Disposable implements editorBrowser.IDiffE
 		this._domElement = domElement;
 		options = options || {};
 
-		this._theme = options.theme || DefaultConfig.editor.theme;
+		this._theme = options.theme || editorOptions.EDITOR_DEFAULTS.viewInfo.theme;
 		// renderSideBySide
 		this._renderSideBySide = true;
 		if (typeof options.renderSideBySide !== 'undefined') {
@@ -384,6 +383,8 @@ export class DiffEditorWidget extends Disposable implements editorBrowser.IDiffE
 				scrollTop: e.scrollTop
 			});
 			this._isHandlingScrollEvent = false;
+
+			this._layoutOverviewViewport();
 		}));
 
 		this._register(this.originalEditor.onDidChangeViewZones(() => {
@@ -776,18 +777,18 @@ export class DiffEditorWidget extends Disposable implements editorBrowser.IDiffE
 		let freeSpace = DiffEditorWidget.ENTIRE_DIFF_OVERVIEW_WIDTH - 2 * DiffEditorWidget.ONE_OVERVIEW_WIDTH;
 		let layoutInfo = this.modifiedEditor.getLayoutInfo();
 		if (layoutInfo) {
-			this._originalOverviewRuler.setLayout(new editorOptions.OverviewRulerPosition({
+			this._originalOverviewRuler.setLayout({
 				top: 0,
 				width: DiffEditorWidget.ONE_OVERVIEW_WIDTH,
 				right: freeSpace + DiffEditorWidget.ONE_OVERVIEW_WIDTH,
 				height: this._height
-			}));
-			this._modifiedOverviewRuler.setLayout(new editorOptions.OverviewRulerPosition({
+			});
+			this._modifiedOverviewRuler.setLayout({
 				top: 0,
 				right: 0,
 				width: DiffEditorWidget.ONE_OVERVIEW_WIDTH,
 				height: this._height
-			}));
+			});
 		}
 	}
 
@@ -897,7 +898,7 @@ export class DiffEditorWidget extends Disposable implements editorBrowser.IDiffE
 
 	private _adjustOptionsForRightHandSide(options: editorOptions.IDiffEditorOptions): editorOptions.IEditorOptions {
 		let result = this._adjustOptionsForSubEditor(options);
-		result.revealHorizontalRightPadding = DefaultConfig.editor.revealHorizontalRightPadding + DiffEditorWidget.ENTIRE_DIFF_OVERVIEW_WIDTH;
+		result.revealHorizontalRightPadding = editorOptions.EDITOR_DEFAULTS.viewInfo.revealHorizontalRightPadding + DiffEditorWidget.ENTIRE_DIFF_OVERVIEW_WIDTH;
 		result.scrollbar.verticalHasArrows = false;
 		result.theme = this._theme + ' modified-in-monaco-diff-editor';
 		return result;
@@ -1952,10 +1953,10 @@ function createFakeLinesDiv(): HTMLElement {
 const defaultInsertColor = Color.fromRGBA(new RGBA(155, 185, 85, 255 * 0.2));
 const defaultRemoveColor = Color.fromRGBA(new RGBA(255, 0, 0, 255 * 0.2));
 
-export const diffInserted = registerColor('diffInserted', { dark: defaultInsertColor, light: defaultInsertColor, hc: null }, nls.localize('diffInserted', 'Background color for text that got inserted.'));
-export const diffRemoved = registerColor('diffRemoved', { dark: defaultRemoveColor, light: defaultRemoveColor, hc: null }, nls.localize('diffRemoved', 'Background color for text that got removed.'));
-export const diffInsertedOutline = registerColor('diffInsertedOutline', { dark: null, light: null, hc: '#33ff2eff' }, nls.localize('diffInsertedOutline', 'Outline color for the text that got inserted.'));
-export const diffRemovedOutline = registerColor('diffRemovedOutline', { dark: null, light: null, hc: '#FF008F' }, nls.localize('diffRemovedOutline', 'Outline color for text that got removed.'));
+export const diffInserted = registerColor('diffEditor.insertedTextBackground', { dark: defaultInsertColor, light: defaultInsertColor, hc: null }, nls.localize('diffEditorInserted', 'Background color for text that got inserted.'));
+export const diffRemoved = registerColor('diffEditor.removedTextBackground', { dark: defaultRemoveColor, light: defaultRemoveColor, hc: null }, nls.localize('diffEditorRemoved', 'Background color for text that got removed.'));
+export const diffInsertedOutline = registerColor('diffEditor.insertedTextBorder', { dark: null, light: null, hc: '#33ff2eff' }, nls.localize('diffEditorInsertedOutline', 'Outline color for the text that got inserted.'));
+export const diffRemovedOutline = registerColor('diffEditor.removedTextBorder', { dark: null, light: null, hc: '#FF008F' }, nls.localize('diffEditorRemovedOutline', 'Outline color for text that got removed.'));
 
 
 registerThemingParticipant((theme, collector) => {
@@ -1976,5 +1977,9 @@ registerThemingParticipant((theme, collector) => {
 	let removedOutline = theme.getColor(diffRemovedOutline);
 	if (removedOutline) {
 		collector.addRule(`.monaco-editor .line-delete, .monaco-editor .char-delete { border: 1px dashed ${removedOutline}; }`);
+	}
+	let shadow = theme.getColor(scrollbarShadow);
+	if (shadow) {
+		collector.addRule(`.monaco-diff-editor.side-by-side .editor.modified { box-shadow: -6px 0 5px -5px ${shadow}; }`);
 	}
 });

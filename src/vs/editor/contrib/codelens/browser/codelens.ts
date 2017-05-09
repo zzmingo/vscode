@@ -21,7 +21,10 @@ import { CodeLensProviderRegistry, CodeLensProvider, ICodeLensSymbol, Command } 
 import * as editorBrowser from 'vs/editor/browser/editorBrowser';
 import { editorContribution } from 'vs/editor/browser/editorBrowserExtensions';
 import { ICodeLensData, getCodeLensData } from '../common/codelens';
-import { IConfigurationChangedEvent } from "vs/editor/common/config/editorOptions";
+import { IConfigurationChangedEvent } from 'vs/editor/common/config/editorOptions';
+import { editorCodeLensForeground } from "vs/editor/common/view/editorColorRegistry";
+import { registerThemingParticipant } from "vs/platform/theme/common/themeService";
+import { editorActiveLinkForeground } from "vs/platform/theme/common/colorRegistry";
 
 
 class CodeLensViewZone implements editorBrowser.IViewZone {
@@ -472,10 +475,13 @@ export class CodeLensContribution implements editorCommon.IEditorContribution {
 			// Ask for all references again
 			scheduler.schedule();
 		}));
-		this._localToDispose.push(this._editor.onDidScrollChange((e) => {
+		this._localToDispose.push(this._editor.onDidScrollChange(e => {
 			if (e.scrollTopChanged) {
 				this._detectVisibleLenses.schedule();
 			}
+		}));
+		this._localToDispose.push(this._editor.onDidLayoutChange(e => {
+			this._detectVisibleLenses.schedule();
 		}));
 		this._localToDispose.push({
 			dispose: () => {
@@ -620,3 +626,14 @@ export class CodeLensContribution implements editorCommon.IEditorContribution {
 		});
 	}
 }
+
+registerThemingParticipant((theme, collector) => {
+	let codeLensForeground = theme.getColor(editorCodeLensForeground);
+	if (codeLensForeground) {
+		collector.addRule(`.monaco-editor .codelens-decoration { color: ${codeLensForeground}; }`);
+	}
+	let activeLinkForeground = theme.getColor(editorActiveLinkForeground);
+	if (activeLinkForeground) {
+		collector.addRule(`.monaco-editor .codelens-decoration > a:hover { color: ${activeLinkForeground} !important; }`);
+	}
+});

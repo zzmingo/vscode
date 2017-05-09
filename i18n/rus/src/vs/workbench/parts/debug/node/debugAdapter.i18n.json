@@ -7,6 +7,7 @@
 	"debugAdapterBinNotFound": "Исполняемый файл адаптера отладки \"{0}\" не существует.",
 	"debugAdapterCannotDetermineExecutable": "Невозможно определить исполняемый файл для адаптера отладки \"{0}\".",
 	"debugType": "Тип конфигурации.",
+	"debugTypeNotRecognised": "Не удается распознать тип отладки. Установите соответствующее расширение отладки.",
 	"node2NotSupported": "Значение \"node2\" больше не поддерживается; используйте \"node\" и задайте для атрибута \"protocol\" значение \"inspector\".",
 	"debugName": "Имя конфигурации; отображается в раскрывающемся меню конфигурации запуска.",
 	"debugRequest": "Запросите тип конфигурации. Возможные типы: \"запуск\" и \"подключение\".",
@@ -16,5 +17,5 @@
 	"debugWindowsConfiguration": "Атрибуты конфигурации запуска для Windows.",
 	"debugOSXConfiguration": "Атрибуты конфигурации запуска для OS X.",
 	"debugLinuxConfiguration": "Атрибуты конфигурации запуска для Linux.",
-	"deprecatedVariables": "env.\", \"config.\" и \"command.\" устарели, используйте \"env:\", \"config:\" и \"command:\"."
+	"deprecatedVariables": "\"env.\", \"config.\" и \"command.\" устарели, используйте \"env:\", \"config:\" и \"command:\"."
 }

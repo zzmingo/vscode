@@ -31,7 +31,7 @@ import { IMarkerService, IMarkerData } from 'vs/platform/markers/common/markers'
 import { IWorkspaceConfigurationService } from 'vs/workbench/services/configuration/common/configuration';
 import { IMessageService, Severity } from 'vs/platform/message/common/message';
 import { IWorkbenchEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { ICursorPositionChangedEvent } from "vs/editor/common/controller/cursorEvents";
+import { ICursorPositionChangedEvent } from 'vs/editor/common/controller/cursorEvents';
 
 export interface IPreferencesRenderer<T> extends IDisposable {
 	preferencesModel: IPreferencesEditorModel<T>;
@@ -670,7 +670,7 @@ class EditSettingRenderer extends Disposable {
 	}
 
 	private onConfigurationChanged(): void {
-		if (!this.editor.getRawConfiguration().glyphMargin) {
+		if (!this.editor.getConfiguration().viewInfo.glyphMargin) {
 			this.editPreferenceWidgetForCusorPosition.hide();
 			this.editPreferenceWidgetForMouseMove.hide();
 		}
@@ -720,7 +720,7 @@ class EditSettingRenderer extends Disposable {
 
 	private showEditPreferencesWidget(editPreferencesWidget: EditPreferenceWidget<ISetting>, settings: ISetting[]) {
 		const line = settings[0].valueRange.startLineNumber;
-		if (this.editor.getRawConfiguration().glyphMargin && this.marginFreeFromOtherDecorations(line)) {
+		if (this.editor.getConfiguration().viewInfo.glyphMargin && this.marginFreeFromOtherDecorations(line)) {
 			editPreferencesWidget.show(line, nls.localize('editTtile', "Edit"), settings);
 			const editPreferenceWidgetToHide = editPreferencesWidget === this.editPreferenceWidgetForCusorPosition ? this.editPreferenceWidgetForMouseMove : this.editPreferenceWidgetForCusorPosition;
 			editPreferenceWidgetToHide.hide();
