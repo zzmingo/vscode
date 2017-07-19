@@ -1,0 +1,1 @@
+export const U2D_VISUAL_EDITOR_ID = 'u2d.editors.visualEditor';
