@@ -1,7 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
 'use strict';
 
 import { TPromise } from 'vs/base/common/winjs.base';
@@ -17,7 +13,7 @@ export class U2DVisualEditor extends BaseEditor {
 
 	public static readonly ID = U2D_VISUAL_EDITOR_ID;
 
-	private _webview: any;
+	private _webview: HTMLIFrameElement;
 
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
@@ -25,7 +21,7 @@ export class U2DVisualEditor extends BaseEditor {
 	) {
 		super(U2DVisualEditor.ID, telemetryService, themeService);
 
-		this._webview = <any>document.createElement('iframe');
+		this._webview = document.createElement('iframe');
 
 		this._webview.style.width = '100%';
 		this._webview.style.height = '100%';
@@ -37,7 +33,6 @@ export class U2DVisualEditor extends BaseEditor {
 	}
 
 	public setInput(input: U2DEntityFileInput, options?: EditorOptions): TPromise<void> {
-		// const oldInput = this.input;
 		return super.setInput(input, options);
 
 		// TODO
