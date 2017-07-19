@@ -9,36 +9,33 @@ import { ScrollableElementCreationOptions, ScrollableElementChangeOptions } from
 import { IOverviewRulerLayoutInfo, ScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import { INewScrollPosition } from 'vs/editor/common/editorCommon';
 import { ViewPart, PartFingerprint, PartFingerprints } from 'vs/editor/browser/view/viewPart';
-import { Scrollable } from 'vs/base/common/scrollable';
 import { ViewContext } from 'vs/editor/common/view/viewContext';
 import * as viewEvents from 'vs/editor/common/view/viewEvents';
 import { RenderingContext, RestrictedRenderingContext } from 'vs/editor/common/view/renderingContext';
 import { FastDomNode, createFastDomNode } from 'vs/base/browser/fastDomNode';
+import { getThemeTypeSelector } from 'vs/platform/theme/common/themeService';
+import { IMouseEvent } from 'vs/base/browser/mouseEvent';
+import { ISimplifiedMouseEvent } from 'vs/base/browser/ui/scrollbar/abstractScrollbar';
 
 export class EditorScrollbar extends ViewPart {
 
-	private scrollable: Scrollable;
 	private scrollbar: ScrollableElement;
 	private scrollbarDomNode: FastDomNode<HTMLElement>;
 
 	constructor(
 		context: ViewContext,
-		scrollable: Scrollable,
 		linesContent: FastDomNode<HTMLElement>,
 		viewDomNode: FastDomNode<HTMLElement>,
 		overflowGuardDomNode: FastDomNode<HTMLElement>
 	) {
 		super(context);
 
-		this.scrollable = scrollable;
-
 		const editor = this._context.configuration.editor;
 		const configScrollbarOpts = editor.viewInfo.scrollbar;
 
 		let scrollbarOptions: ScrollableElementCreationOptions = {
-			canUseTranslate3d: editor.canUseTranslate3d,
 			listenOnDomNode: viewDomNode.domNode,
-			className: 'editor-scrollable' + ' ' + editor.viewInfo.theme,
+			className: 'editor-scrollable' + ' ' + getThemeTypeSelector(context.theme.type),
 			useShadows: false,
 			lazyRender: true,
 
@@ -55,7 +52,7 @@ export class EditorScrollbar extends ViewPart {
 			mouseWheelScrollSensitivity: configScrollbarOpts.mouseWheelScrollSensitivity,
 		};
 
-		this.scrollbar = this._register(new ScrollableElement(linesContent.domNode, scrollbarOptions, this.scrollable));
+		this.scrollbar = this._register(new ScrollableElement(linesContent.domNode, scrollbarOptions, this._context.viewLayout.scrollable));
 		PartFingerprints.write(this.scrollbar.getDomNode(), PartFingerprint.ScrollableElement);
 
 		this.scrollbarDomNode = createFastDomNode(this.scrollbar.getDomNode());
@@ -67,13 +64,12 @@ export class EditorScrollbar extends ViewPart {
 		// changing the .scrollTop of this.linesContent
 
 		let onBrowserDesperateReveal = (domNode: HTMLElement, lookAtScrollTop: boolean, lookAtScrollLeft: boolean) => {
-			const scrollState = this.scrollable.getState();
 			let newScrollPosition: INewScrollPosition = {};
 
 			if (lookAtScrollTop) {
 				let deltaTop = domNode.scrollTop;
 				if (deltaTop) {
-					newScrollPosition.scrollTop = scrollState.scrollTop + deltaTop;
+					newScrollPosition.scrollTop = this._context.viewLayout.getScrollTop() + deltaTop;
 					domNode.scrollTop = 0;
 				}
 			}
@@ -81,12 +77,12 @@ export class EditorScrollbar extends ViewPart {
 			if (lookAtScrollLeft) {
 				let deltaLeft = domNode.scrollLeft;
 				if (deltaLeft) {
-					newScrollPosition.scrollLeft = scrollState.scrollLeft + deltaLeft;
+					newScrollPosition.scrollLeft = this._context.viewLayout.getScrollLeft() + deltaLeft;
 					domNode.scrollLeft = 0;
 				}
 			}
 
-			this.scrollable.updateState(newScrollPosition);
+			this._context.viewLayout.setScrollPosition(newScrollPosition);
 		};
 
 		// I've seen this happen both on the view dom node & on the lines content dom node.
@@ -115,23 +111,20 @@ export class EditorScrollbar extends ViewPart {
 		return this.scrollbarDomNode;
 	}
 
-	public delegateVerticalScrollbarMouseDown(browserEvent: MouseEvent): void {
+	public delegateVerticalScrollbarMouseDown(browserEvent: IMouseEvent): void {
 		this.scrollbar.delegateVerticalScrollbarMouseDown(browserEvent);
 	}
 
-	public getVerticalSliderVerticalCenter(): number {
-		return this.scrollbar.getVerticalSliderVerticalCenter();
+	public delegateSliderMouseDown(e: ISimplifiedMouseEvent, onDragFinished: () => void): void {
+		this.scrollbar.delegateSliderMouseDown(e, onDragFinished);
 	}
 
 	// --- begin event handlers
 
 	public onConfigurationChanged(e: viewEvents.ViewConfigurationChangedEvent): boolean {
-		const editor = this._context.configuration.editor;
-
-		this.scrollbar.updateClassName('editor-scrollable' + ' ' + editor.viewInfo.theme);
-		if (e.viewInfo || e.canUseTranslate3d) {
+		if (e.viewInfo) {
+			const editor = this._context.configuration.editor;
 			let newOpts: ScrollableElementChangeOptions = {
-				canUseTranslate3d: editor.canUseTranslate3d,
 				handleMouseWheel: editor.viewInfo.scrollbar.handleMouseWheel,
 				mouseWheelScrollSensitivity: editor.viewInfo.scrollbar.mouseWheelScrollSensitivity
 			};
@@ -143,6 +136,10 @@ export class EditorScrollbar extends ViewPart {
 		return true;
 	}
 	public onScrollChanged(e: viewEvents.ViewScrollChangedEvent): boolean {
+		return true;
+	}
+	public onThemeChanged(e: viewEvents.ViewThemeChangedEvent): boolean {
+		this.scrollbar.updateClassName('editor-scrollable' + ' ' + getThemeTypeSelector(this._context.theme.type));
 		return true;
 	}
 

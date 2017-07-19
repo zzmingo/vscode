@@ -1,4 +1,10 @@
 {
+	"information_for_contributors": [
+		"This file has been converted from https://github.com/atom/language-clojure/blob/master/grammars/clojure.cson",
+		"If you want to provide a fix or improvement, please create a pull request against the original repository.",
+		"Once accepted there, we are happy to receive an update request."
+	],
+	"version": "https://github.com/atom/language-clojure/commit/71068a45499cace7a69c45e337860ebbc9b7fccc",
 	"scopeName": "source.clojure",
 	"fileTypes": [
 		"boot",
@@ -10,7 +16,9 @@
 		"cljx",
 		"clojure",
 		"edn",
-		"org"
+		"org",
+		"joke",
+		"joker"
 	],
 	"foldingStartMarker": "\\(\\s*$",
 	"foldingStopMarker": "^\\s*\\)",
@@ -64,14 +72,11 @@
 		},
 		{
 			"include": "#symbol"
-		},
-		{
-			"include": "#whitespace"
 		}
 	],
 	"repository": {
 		"comment": {
-			"begin": ";",
+			"begin": "(?<!\\\\);",
 			"beginCaptures": {
 				"0": {
 					"name": "punctuation.definition.comment.clojure"
@@ -217,18 +222,15 @@
 					"name": "punctuation.section.expression.begin.clojure"
 				}
 			},
-			"end": "(\\))(\\n)|(\\)(?=[\\}\\]\\)\\s]*(?:;|$)))|(\\))",
+			"end": "(\\))$|(\\)(?=[\\}\\]\\)\\s]*(?:;|$)))|(\\))",
 			"endCaptures": {
 				"1": {
 					"name": "punctuation.section.expression.end.trailing.clojure"
 				},
 				"2": {
-					"name": "meta.after-expression.clojure"
-				},
-				"3": {
 					"name": "punctuation.section.expression.end.trailing.clojure"
 				},
-				"4": {
+				"3": {
 					"name": "punctuation.section.expression.end.clojure"
 				}
 			},
@@ -293,18 +295,15 @@
 					"name": "punctuation.section.expression.begin.clojure"
 				}
 			},
-			"end": "(\\))(\\n)|(\\)(?=[\\}\\]\\)\\s]*(?:;|$)))|(\\))",
+			"end": "(\\))$|(\\)(?=[\\}\\]\\)\\s]*(?:;|$)))|(\\))",
 			"endCaptures": {
 				"1": {
 					"name": "punctuation.section.expression.end.trailing.clojure"
 				},
 				"2": {
-					"name": "meta.after-expression.clojure"
-				},
-				"3": {
 					"name": "punctuation.section.expression.end.trailing.clojure"
 				},
-				"4": {
+				"3": {
 					"name": "punctuation.section.expression.end.clojure"
 				}
 			},
@@ -448,11 +447,6 @@
 					"include": "$self"
 				}
 			]
-		},
-		"whitespace": {
-			"match": "\\s+$",
-			"name": "invalid.trailing-whitespace"
 		}
-	},
-	"version": "https://github.com/atom/language-clojure/commit/82ff056df3bf2682c90b679d0a9bc1555bea0510"
+	}
 }

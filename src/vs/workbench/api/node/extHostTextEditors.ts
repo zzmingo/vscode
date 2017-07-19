@@ -10,12 +10,11 @@ import { toThenable } from 'vs/base/common/async';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IThreadService } from 'vs/workbench/services/thread/common/threadService';
 import { TextEditorSelectionChangeKind } from './extHostTypes';
-import { IResolvedTextEditorConfiguration, ISelectionChangeEvent } from 'vs/workbench/api/node/mainThreadEditor';
 import * as TypeConverters from './extHostTypeConverters';
 import { TextEditorDecorationType, ExtHostTextEditor } from './extHostTextEditor';
 import { ExtHostDocumentsAndEditors } from './extHostDocumentsAndEditors';
 import { Position as EditorPosition } from 'vs/platform/editor/common/editor';
-import { MainContext, MainThreadEditorsShape, ExtHostEditorsShape, ITextDocumentShowOptions, ITextEditorPositionData } from './extHost.protocol';
+import { MainContext, MainThreadEditorsShape, ExtHostEditorsShape, ITextDocumentShowOptions, ITextEditorPositionData, IResolvedTextEditorConfiguration, ISelectionChangeEvent } from './extHost.protocol';
 import * as vscode from 'vscode';
 
 export class ExtHostEditors extends ExtHostEditorsShape {
@@ -64,20 +63,19 @@ export class ExtHostEditors extends ExtHostEditorsShape {
 		if (typeof columnOrOptions === 'number') {
 			options = {
 				position: TypeConverters.fromViewColumn(columnOrOptions),
-				preserveFocus: preserveFocus,
-				pinned: true
+				preserveFocus
 			};
 		} else if (typeof columnOrOptions === 'object') {
 			options = {
 				position: TypeConverters.fromViewColumn(columnOrOptions.viewColumn),
 				preserveFocus: columnOrOptions.preserveFocus,
-				pinned: columnOrOptions.preview === undefined ? true : !columnOrOptions.preview
+				selection: typeof columnOrOptions.selection === 'object' ? TypeConverters.fromRange(columnOrOptions.selection) : undefined,
+				pinned: typeof columnOrOptions.preview === 'boolean' ? !columnOrOptions.preview : undefined
 			};
 		} else {
 			options = {
 				position: EditorPosition.ONE,
-				preserveFocus: false,
-				pinned: true
+				preserveFocus: false
 			};
 		}
 

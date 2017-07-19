@@ -19,16 +19,16 @@ import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { MarkerService } from 'vs/platform/markers/common/markerService';
 import { IThreadService } from 'vs/workbench/services/thread/common/threadService';
 import { ExtHostLanguageFeatures } from 'vs/workbench/api/node/extHostLanguageFeatures';
-import { MainThreadLanguageFeatures } from 'vs/workbench/api/node/mainThreadLanguageFeatures';
+import { MainThreadLanguageFeatures } from 'vs/workbench/api/electron-browser/mainThreadLanguageFeatures';
 import { ExtHostCommands } from 'vs/workbench/api/node/extHostCommands';
-import { MainThreadCommands } from 'vs/workbench/api/node/mainThreadCommands';
-import { IHeapService } from 'vs/workbench/api/node/mainThreadHeapService';
+import { MainThreadCommands } from 'vs/workbench/api/electron-browser/mainThreadCommands';
+import { IHeapService } from 'vs/workbench/api/electron-browser/mainThreadHeapService';
 import { ExtHostDocuments } from 'vs/workbench/api/node/extHostDocuments';
 import { ExtHostDocumentsAndEditors } from 'vs/workbench/api/node/extHostDocumentsAndEditors';
 import { getDocumentSymbols } from 'vs/editor/contrib/quickOpen/common/quickOpen';
 import { DocumentSymbolProviderRegistry, DocumentHighlightKind } from 'vs/editor/common/modes';
-import { getCodeLensData } from 'vs/editor/contrib/codelens/common/codelens';
-import { getDefinitionsAtPosition, getImplementationsAtPosition, getTypeDefinitionsAtPosition } from 'vs/editor/contrib/goToDeclaration/common/goToDeclaration';
+import { getCodeLensData } from 'vs/editor/contrib/codelens/browser/codelens';
+import { getDefinitionsAtPosition, getImplementationsAtPosition, getTypeDefinitionsAtPosition } from 'vs/editor/contrib/goToDeclaration/browser/goToDeclaration';
 import { getHover } from 'vs/editor/contrib/hover/common/hover';
 import { getOccurrencesAtPosition } from 'vs/editor/contrib/wordHighlighter/common/wordHighlighter';
 import { provideReferences } from 'vs/editor/contrib/referenceSearch/browser/referenceSearch';
@@ -650,10 +650,29 @@ suite('ExtHostLanguageFeatures', function () {
 				assert.equal(value.length, 2);
 
 				let [first, second] = value;
-				assert.equal(first.command.title, 'Testing1');
-				assert.equal(first.command.id, 'test1');
-				assert.equal(second.command.title, 'Testing2');
-				assert.equal(second.command.id, 'test2');
+				assert.equal(first.title, 'Testing1');
+				assert.equal(first.id, 'test1');
+				assert.equal(second.title, 'Testing2');
+				assert.equal(second.id, 'test2');
+			});
+		});
+	});
+
+	test('Cannot read property \'id\' of undefined, #29469', function () {
+
+		disposables.push(extHost.registerCodeActionProvider(defaultSelector, <vscode.CodeActionProvider>{
+			provideCodeActions(): any {
+				return [
+					undefined,
+					null,
+					<vscode.Command>{ command: 'test', title: 'Testing' }
+				];
+			}
+		}));
+
+		return threadService.sync().then(() => {
+			return getCodeActions(model, model.getFullModelRange()).then(value => {
+				assert.equal(value.length, 1);
 			});
 		});
 	});

@@ -21,7 +21,6 @@
 	position: relative;
 	overflow: visible;
 	-webkit-text-size-adjust: 100%;
-	-ms-high-contrast-adjust: none;
 	-webkit-font-feature-settings: "liga" off, "calt" off;
 	font-feature-settings: "liga" off, "calt" off;
 }
@@ -29,29 +28,6 @@
 	-webkit-font-feature-settings: "liga" on, "calt" on;
 	font-feature-settings: "liga" on, "calt" on;
 }
-
-.monaco-editor {
-	color: #333;
-	/*
-	 * WORKAROUND:
-	 * Because of bug https://monacotools.visualstudio.com/DefaultCollection/Monaco/_workitems/edit/13254
-	 * we are *not* using the color white (or #ffffff, rgba(255,255,255)) but something very close to white.
-	 */
-	background: #fffffe;
-}
-
-.monaco-editor.vs-dark,
-.monaco-editor.vs-dark .zone-widget .monaco-editor {
-	color: #BBB;
-	background: #1E1E1E;
-}
-
-.monaco-editor.hc-black,
-.monaco-editor.hc-black .zone-widget .monaco-editor {
-	color: #fff;
-	background: #000;
-}
-
 
 /* -------------------- Misc -------------------- */
 
@@ -64,13 +40,3 @@
 	position: absolute;
 	top: 0;
 }
-
-/* -------------------- Squigglies -------------------- */
-
-.monaco-editor.vs		.redsquiggly,
-.monaco-editor.vs-dark	.redsquiggly { background: url("red-squiggly.svg") repeat-x bottom left; }
-.monaco-editor.hc-black .redsquiggly { border-bottom: 4px double #E47777; opacity: 0.8; }
-
-.monaco-editor.vs		.greensquiggly,
-.monaco-editor.vs-dark	.greensquiggly { background: url("green-squiggly.svg") repeat-x bottom left; }
-.monaco-editor.hc-black .greensquiggly { border-bottom: 4px double #71B771; opacity: 0.8; }

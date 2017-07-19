@@ -16,6 +16,9 @@ if (process.argv.indexOf('--prof-startup') >= 0) {
 // in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
 // LC_NUMERIC to prevent this from happening (selects the numeric formatting category of the
 // C locale, http://en.cppreference.com/w/cpp/locale/LC_categories). TODO@Ben temporary.
+if (process.env.LC_ALL) {
+	process.env.LC_ALL = 'C';
+}
 process.env.LC_NUMERIC = 'C';
 
 // Perf measurements
@@ -139,7 +142,7 @@ function getNodeCachedDataDir() {
 
 	var dir = path.join(app.getPath('userData'), 'CachedData', productJson.commit);
 
-	return mkdirp(dir).then(undefined, function (err) { /*ignore*/ });
+	return mkdirp(dir).then(undefined, function () { /*ignore*/ });
 }
 
 function mkdirp(dir) {
@@ -222,12 +225,13 @@ var nodeCachedDataDir = getNodeCachedDataDir().then(function (value) {
 	}
 });
 
-var nlsConfig = getNLSConfiguration();
-process.env['VSCODE_NLS_CONFIG'] = JSON.stringify(nlsConfig);
+// Load our code once ready
+app.once('ready', function () {
+	global.perfAppReady = Date.now();
+	var nlsConfig = getNLSConfiguration();
+	process.env['VSCODE_NLS_CONFIG'] = JSON.stringify(nlsConfig);
 
-var bootstrap = require('./bootstrap-amd');
-nodeCachedDataDir.then(function () {
-	bootstrap.bootstrap('vs/code/electron-main/main');
-}, function (err) {
-	console.error(err);
+	nodeCachedDataDir.then(function () {
+		require('./bootstrap-amd').bootstrap('vs/code/electron-main/main');
+	}, console.error);
 });

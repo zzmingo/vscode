@@ -7,619 +7,90 @@
 
 declare module 'vscode' {
 
-	/**
-	 * Defines a problem pattern
-	 */
-	export interface ProblemPattern {
+	export interface WorkspaceConfiguration2 extends WorkspaceConfiguration {
 
-		/**
-		 * The regular expression to find a problem in the console output of an
-		 * executed task.
-		 */
-		regexp: RegExp;
+		inspect<T>(section: string): { key: string; defaultValue?: T; globalValue?: T; workspaceValue?: T, folderValue?: T } | undefined;
 
-		/**
-		 * The match group index of the filename.
-		 *
-		 * Defaults to 1 if omitted.
-		 */
-		file?: number;
-
-		/**
-		 * The match group index of the problems's location. Valid location
-		 * patterns are: (line), (line,column) and (startLine,startColumn,endLine,endColumn).
-		 * If omitted the line and colum properties are used.
-		 */
-		location?: number;
-
-		/**
-		 * The match group index of the problem's line in the source file.
-		 *
-		 * Defaults to 2 if omitted.
-		 */
-		line?: number;
-
-		/**
-		 * The match group index of the problem's character in the source file.
-		 *
-		 * Defaults to 3 if omitted.
-		 */
-		character?: number;
-
-		/**
-		 * The match group index of the problem's end line in the source file.
-		 *
-		 * Defaults to undefined. No end line is captured.
-		 */
-		endLine?: number;
-
-		/**
-		 * The match group index of the problem's end character in the source file.
-		 *
-		 * Defaults to undefined. No end column is captured.
-		 */
-		endCharacter?: number;
-
-		/**
-		 * The match group index of the problem's severity.
-		 *
-		 * Defaults to undefined. In this case the problem matcher's severity
-		 * is used.
-		*/
-		severity?: number;
-
-		/**
-		 * The match group index of the problems's code.
-		 *
-		 * Defaults to undefined. No code is captured.
-		 */
-		code?: number;
-
-		/**
-		 * The match group index of the message. If omitted it defaults
-		 * to 4 if location is specified. Otherwise it defaults to 5.
-		 */
-		message?: number;
-
-		/**
-		 * Specifies if the last pattern in a multi line problem matcher should
-		 * loop as long as it does match a line consequently. Only valid on the
-		 * last problem pattern in a multi line problem matcher.
-		 */
-		loop?: boolean;
-	}
-
-	/**
-	 * A multi line problem pattern.
-	 */
-	export type MultiLineProblemPattern = ProblemPattern[];
-
-	/**
-	 * The way how the file location is interpreted
-	 */
-	export enum FileLocationKind {
-		/**
-		 * VS Code should decide based on whether the file path found in the
-		 * output is absolute or relative. A relative file path will be treated
-		 * relative to the workspace root.
-		 */
-		Auto = 1,
-
-		/**
-		 * Always treat the file path relative.
-		 */
-		Relative = 2,
-
-		/**
-		 * Always treat the file path absolute.
-		 */
-		Absolute = 3
-	}
-
-	/**
-	 * Controls to which kind of documents problems are applied.
-	 */
-	export enum ApplyToKind {
-		/**
-		 * Problems are applied to all documents.
-		 */
-		AllDocuments = 1,
-		/**
-		 * Problems are applied to open documents only.
-		 */
-		OpenDocuments = 2,
-
-		/**
-		 * Problems are applied to closed documents only.
-		 */
-		ClosedDocuments = 3
-	}
-
-
-	/**
-	 * A background monitor pattern
-	 */
-	export interface BackgroundPattern {
-		/**
-		 * The actual regular expression
-		 */
-		regexp: RegExp;
-
-		/**
-		 * The match group index of the filename. If provided the expression
-		 * is matched for that file only.
-		 */
-		file?: number;
-	}
-
-	/**
-	 * A description to control the activity of a problem matcher
-	 * watching a background task.
-	 */
-	export interface BackgroundMonitor {
-		/**
-		 * If set to true the monitor is in active mode when the task
-		 * starts. This is equals of issuing a line that matches the
-		 * beginPattern.
-		 */
-		activeOnStart?: boolean;
-
-		/**
-		 * If matched in the output the start of a background activity is signaled.
-		 */
-		beginsPattern: RegExp | BackgroundPattern;
-
-		/**
-		 * If matched in the output the end of a background activity is signaled.
-		 */
-		endsPattern: RegExp | BackgroundPattern;
-	}
-
-	/**
-	 * Defines a problem matcher
-	 */
-	export interface ProblemMatcher {
-		/**
-		 * The owner of a problem. Defaults to a generated id
-		 * if omitted.
-		 */
-		owner?: string;
-
-		/**
-		 * The type of documents problems detected by this matcher
-		 * apply to. Default to `ApplyToKind.AllDocuments` if omitted.
-		 */
-		applyTo?: ApplyToKind;
-
-		/**
-		 * How a file location recognize by a matcher should be interpreted. If omitted the file location
-		 * if `FileLocationKind.Auto`.
-		 */
-		fileLocation?: FileLocationKind | string;
-
-		/**
-		 * The actual pattern used by the problem matcher.
-		 */
-		pattern: ProblemPattern | MultiLineProblemPattern;
-
-		/**
-		 * The default severity of a detected problem in the output. Used
-		 * if the `ProblemPattern` doesn't define a severity match group.
-		 */
-		severity?: DiagnosticSeverity;
-
-		/**
-		 * A background monitor for tasks that are running in the background.
-		 */
-		backgound?: BackgroundMonitor;
-	}
-
-	/**
-	 * Controls the behaviour of the terminal's visibility.
-	 */
-	export enum RevealKind {
-		/**
-		 * Always brings the terminal to front if the task is executed.
-		 */
-		Always = 1,
-
-		/**
-		 * Only brings the terminal to front if a problem is detected executing the task
-		 * (e.g. the task couldn't be started because).
-		 */
-		Silent = 2,
-
-		/**
-		 * The terminal never comes to front when the task is executed.
-		 */
-		Never = 3
-	}
-
-	/**
-	 * Controls terminal specific behaviour.
-	 */
-	export interface TerminalBehaviour {
-		/**
-		 * Controls whether the terminal executing a task is brought to front or not.
-		 * Defaults to `RevealKind.Always`.
-		 */
-		reveal?: RevealKind;
-
-		/**
-		 * Controls whether the command is echoed in the terminal or not.
-		 */
-		echo?: boolean;
-	}
-
-
-	export interface ProcessOptions {
-		/**
-		 * The current working directory of the executed program or shell.
-		 * If omitted VSCode's current workspace root is used.
-		 */
-		cwd?: string;
-
-		/**
-		 * The additional environment of the executed program or shell. If omitted
-		 * the parent process' environment is used. If provided it is merged with
-		 * the parent process' environment.
-		 */
-		env?: { [key: string]: string };
-	}
-
-	export namespace TaskGroup {
-		/**
-		 * The clean task group
-		 */
-		export const Clean: 'clean';
-		/**
-		 * The build task group
-		 */
-		export const Build: 'build';
-		/**
-		 * The rebuild all task group
-		 */
-		export const RebuildAll: 'rebuildAll';
-		/**
-		 * The test task group
-		 */
-		export const Test: 'test';
-	}
-
-	/**
-	 * The supported task groups.
-	 */
-	export type TaskGroup = 'clean' | 'build' | 'rebuildAll' | 'test';
-
-	/**
-	 * A task that starts an external process.
-	 */
-	export class ProcessTask {
-
-		/**
-		 * Creates a process task.
-		 *
-		 * @param name the task's name. Is presented in the user interface.
-		 * @param process the process to start.
-		 * @param problemMatchers the problem matchers to use.
-		 */
-		constructor(name: string, process: string, ...problemMatchers: ProblemMatcher[]);
-
-		/**
-		 * Creates a process task.
-		 *
-		 * @param name the task's name. Is presented in the user interface.
-		 * @param process the process to start.
-		 * @param args arguments to be passed to the process.
-		 * @param problemMatchers the problem matchers to use.
-		 */
-		constructor(name: string, process: string, args: string[], ...problemMatchers: ProblemMatcher[]);
-
-		/**
-		 * Creates a process task.
-		 *
-		 * @param name the task's name. Is presented in the user interface.
-		 * @param process the process to start.
-		 * @param args arguments to be passed to the process.
-		 * @param options additional options for the started process.
-		 * @param problemMatchers the problem matchers to use.
-		 */
-		constructor(name: string, process: string, args: string[], options: ProcessOptions, ...problemMatchers: ProblemMatcher[]);
-
-		/**
-		 * The task's name
-		 */
-		readonly name: string;
-
-		/**
-		 * The task's identifier. If omitted the name is
-		 * used as an identifier.
-		 */
-		identifier: string;
-
-		/**
-		 * Whether the task is a background task or not.
-		 */
-		isBackground: boolean;
-
-		/**
-		 * The process to be executed.
-		 */
-		readonly process: string;
-
-		/**
-		 * The arguments passed to the process. Defaults to an empty array.
-		 */
-		args: string[];
-
-		/**
-		 * The task group this tasks belongs to. Defaults to undefined meaning
-		 * that the task doesn't belong to any special group.
-		 */
-		group?: TaskGroup;
-
-		/**
-		 * The process options used when the process is executed.
-		 * Defaults to an empty object literal.
-		 */
-		options: ProcessOptions;
-
-		/**
-		 * The terminal options. Defaults to an empty object literal.
-		 */
-		terminal: TerminalBehaviour;
-
-		/**
-		 * The problem matchers attached to the task. Defaults to an empty
-		 * array.
-		 */
-		problemMatchers: ProblemMatcher[];
-	}
-
-	export type ShellOptions = {
-		/**
-		 * The shell executable.
-		 */
-		executable: string;
-
-		/**
-		 * The arguments to be passed to the shell executable used to run the task.
-		 */
-		shellArgs?: string[];
-
-		/**
-		 * The current working directory of the executed shell.
-		 * If omitted VSCode's current workspace root is used.
-		 */
-		cwd?: string;
-
-		/**
-		 * The additional environment of the executed shell. If omitted
-		 * the parent process' environment is used. If provided it is merged with
-		 * the parent process' environment.
-		 */
-		env?: { [key: string]: string };
-	} | {
-			/**
-			 * The current working directory of the executed shell.
-			 * If omitted VSCode's current workspace root is used.
-			 */
-			cwd: string;
-
-			/**
-			 * The additional environment of the executed shell. If omitted
-			 * the parent process' environment is used. If provided it is merged with
-			 * the parent process' environment.
-			 */
-			env?: { [key: string]: string };
-		} | {
-			/**
-			 * The current working directory of the executed shell.
-			 * If omitted VSCode's current workspace root is used.
-			 */
-			cwd?: string;
-
-			/**
-			 * The additional environment of the executed shell. If omitted
-			 * the parent process' environment is used. If provided it is merged with
-			 * the parent process' environment.
-			 */
-			env: { [key: string]: string };
-		};
-
-	/**
-	 * A task that executes a shell command.
-	 */
-	export class ShellTask {
-
-		/**
-		 * Creates a shell task.
-		 *
-		 * @param name the task's name. Is presented in the user interface.
-		 * @param commandLine the command line to execute.
-		 * @param problemMatchers the problem matchers to use.
-		 */
-		constructor(name: string, commandLine: string, ...problemMatchers: ProblemMatcher[]);
-
-		/**
-		 * Creates a shell task.
-		 *
-		 * @param name the task's name. Is presented in the user interface.
-		 * @param commandLine the command line to execute.
-		 * @param options additional options used when creating the shell.
-		 * @param problemMatchers the problem matchers to use.
-		 */
-		constructor(name: string, commandLine: string, options: ShellOptions, ...problemMatchers: ProblemMatcher[]);
-
-		/**
-		 * The task's name
-		 */
-		readonly name: string;
-
-		/**
-		 * The task's identifier. If omitted the name is
-		 * used as an identifier.
-		 */
-		identifier: string;
-
-		/**
-		 * Whether the task is a background task or not.
-		 */
-		isBackground: boolean;
-
-		/**
-		 * The command line to execute.
-		 */
-		readonly commandLine: string;
-
-		/**
-		 * The task group this tasks belongs to. Defaults to undefined meaning
-		 * that the task doesn't belong to any special group.
-		 */
-		group?: TaskGroup;
-
-		/**
-		 * The shell options used when the shell is executed. Defaults to an
-		 * empty object literal.
-		 */
-		options: ShellOptions;
-
-		/**
-		 * The terminal options. Defaults to an empty object literal.
-		 */
-		terminal: TerminalBehaviour;
-
-		/**
-		 * The problem matchers attached to the task. Defaults to an empty
-		 * array.
-		 */
-		problemMatchers: ProblemMatcher[];
-	}
-
-	export type Task = ProcessTask | ShellTask;
-
-	/**
-	 * A task provider allows to add tasks to the task service.
-	 * A task provider is registerd via #workspace.registerTaskProvider.
-	 */
-	export interface TaskProvider {
-		/**
-		 * Provides additional tasks.
-		 * @param token A cancellation token.
-		 * @return a #TaskSet
-		 */
-		provideTasks(token: CancellationToken): ProviderResult<Task[]>;
 	}
 
 	export namespace workspace {
 		/**
-		 * Register a task provider.
+		 * Get a configuration object.
 		 *
-		 * @param provider A task provider.
-		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+		 * When a section-identifier is provided only that part of the configuration
+		 * is returned. Dots in the section-identifier are interpreted as child-access,
+		 * like `{ myExt: { setting: { doIt: true }}}` and `getConfiguration('myExt.setting').get('doIt') === true`.
+		 *
+		 * When a resource is provided, only configuration scoped to that resource
+		 * is returned.
+		 *
+		 * If editor is opened with `no folders` then returns the global configuration.
+		 *
+		 * If editor is opened with `folders` then returns the configuration from the folder in which the resource belongs to.
+		 *
+		 * If resource does not belongs to any opened folders, then returns the workspace configuration.
+		 *
+		 * @param section A dot-separated identifier.
+		 * @param resource A resource for which configuration is asked
+		 * @return The full workspace configuration or a subset.
 		 */
-		export function registerTaskProvider(provider: TaskProvider): Disposable;
+		export function getConfiguration2(section?: string, resource?: Uri): WorkspaceConfiguration2;
+	}
+
+	/**
+	 * Represents the workspace configuration.
+	 *
+	 * The workspace configuration is a merged view of
+	 *
+	 * - Default configuration
+	 * - Global configuration
+	 * - Workspace configuration (if available)
+	 * - Folder configuration of the [resource](#workspace.getConfiguration2) (if requested and available)
+	 *
+	 * **Global configuration** comes from User Settings and shadows Defaults.
+	 *
+	 * **Workspace configuration** comes from the `.vscode` folder under first [workspace folders](#workspace.workspaceFolders)
+	 * and shadows Globals configuration.
+	 *
+	 * **Folder configurations** comes from `.vscode` folder under [workspace folders](#workspace.workspaceFolders). Each [workspace folder](#workspace.workspaceFolders)
+	 * has a configuration and the requested resource determines which folder configuration to pick. Folder configuration shodows Workspace configuration.
+	 *
+	 * *Note:* Workspace and Folder configurations contains settings from `launch.json` and `tasks.json` files. Their basename will be
+	 * part of the section identifier. The following snippets shows how to retrieve all configurations
+	 * from `launch.json`:
+	 *
+	 * ```ts
+	 * // launch.json configuration
+	 * const config = workspace.getConfiguration('launch', workspace.workspaceFolders[1]);
+	 *
+	 * // retrieve values
+	 * const values = config.get('configurations');
+	 * ```
+	 */
+	export interface WorkspaceConfiguration2 extends WorkspaceConfiguration {
+
+		/**
+		 * Retrieve all information about a configuration setting. A configuration value
+		 * often consists of a *default* value, a global or installation-wide value,
+		 * a workspace-specific value and a folder-specific value.
+		 *
+		 * The *effective* value (returned by [`get`](#WorkspaceConfiguration.get))
+		 * is computed like this: `defaultValue` overwritten by `globalValue`,
+		 * `globalValue` overwritten by `workspaceValue`. `workspaceValue` overwritten by `folderValue`.
+		 *
+		 * *Note:* The configuration name must denote a leaf in the configuration tree
+		 * (`editor.fontSize` vs `editor`) otherwise no result is returned.
+		 *
+		 * @param section Configuration name, supports _dotted_ names.
+		 * @return Information about a configuration setting or `undefined`.
+		 */
+		inspect<T>(section: string): { key: string; defaultValue?: T; globalValue?: T; workspaceValue?: T, folderValue?: T } | undefined;
 
 	}
 
 	export namespace window {
 
 		export function sampleFunction(): Thenable<any>;
-	}
-
-	export namespace window {
-
-		/**
-		 * Create a new explorer view.
-		 *
-		 * @param id View id.
-		 * @param name View name.
-		 * @param dataProvider A [TreeDataProvider](#TreeDataProvider).
-		 * @return An instance of [View](#View).
-		 */
-		export function createExplorerView<T>(id: string, name: string, dataProvider: TreeDataProvider<T>): View<T>;
-	}
-
-	/**
-	 * A view to interact with nodes
-	 */
-	export interface View<T> {
-
-		/**
-		 * Refresh the given nodes
-		 */
-		refresh(...nodes: T[]): void;
-
-		/**
-		 * Dispose this view
-		 */
-		dispose(): void;
-	}
-
-	/**
-	 * A data provider for a tree view contribution.
-	 *
-	 * The contributed tree view will ask the corresponding provider to provide the root
-	 * node and resolve children for each node. In addition, the provider could **optionally**
-	 * provide the following information for each node:
-	 * - label: A human-readable label used for rendering the node.
-	 * - hasChildren: Whether the node has children and is expandable.
-	 * - clickCommand: A command to execute when the node is clicked.
-	 */
-	export interface TreeDataProvider<T> {
-
-		/**
-		 * Provide the root node. This function will be called when the tree explorer is activated
-		 * for the first time. The root node is hidden and its direct children will be displayed on the first level of
-		 * the tree explorer.
-		 *
-		 * @return The root node.
-		 */
-		provideRootNode(): T | Thenable<T>;
-
-		/**
-		 * Resolve the children of `node`.
-		 *
-		 * @param node The node from which the provider resolves children.
-		 * @return Children of `node`.
-		 */
-		resolveChildren?(node: T): T[] | Thenable<T[]>;
-
-		/**
-		 * Provide a human-readable string that will be used for rendering the node. Default to use
-		 * `node.toString()` if not provided.
-		 *
-		 * @param node The node from which the provider computes label.
-		 * @return A human-readable label.
-		 */
-		getLabel?(node: T): string;
-
-		/**
-		 * Determine if `node` has children and is expandable. Default to `true` if not provided.
-		 *
-		 * @param node The node to determine if it has children and is expandable.
-		 * @return A boolean that determines if `node` has children and is expandable.
-		 */
-		getHasChildren?(node: T): boolean;
-
-		/**
-		 * Provider a context key to be set for the node. This can be used to describe actions for each node.
-		 *
-		 * @param node The node from which the provider computes context key.
-		 * @return A context key.
-		 */
-		getContextKey?(node: T): string;
-
-		/**
-		 * Get the command to execute when `node` is clicked.
-		 *
-		 * Commands can be registered through [registerCommand](#commands.registerCommand). `node` will be provided
-		 * as the first argument to the command's callback function.
-		 *
-		 * @param node The node that the command is associated with.
-		 * @return The command to execute when `node` is clicked.
-		 */
-		getClickCommand?(node: T): Command;
 	}
 
 	/**
@@ -651,52 +122,49 @@ declare module 'vscode' {
 		export function registerDiffInformationCommand(command: string, callback: (diff: LineChange[], ...args: any[]) => any, thisArg?: any): Disposable;
 	}
 
-	export interface Terminal {
+	export namespace debug {
 
 		/**
-		 * The name of the terminal.
+		 * Start debugging by using either a named launch or named compound configuration,
+		 * or by directly passing a DebugConfiguration.
+		 * Before debugging starts, all unsaved files are saved and the launch configurations are up-to-date.
+		 * @param nameOrConfiguration Either the name of a debug or compound configuration or a DebugConfiguration object.
+		 * @return A thenable that resolves when debugging could be successfully started.
 		 */
-		readonly name: string;
+		export function startDebugging(nameOrConfiguration: string | DebugConfiguration): Thenable<boolean>;
+	}
+
+	/**
+	 * Namespace for handling credentials.
+	 */
+	export namespace credentials {
 
 		/**
-		 * The process ID of the shell process.
-		 */
-		readonly processId: Thenable<number>;
-
-		/**
-		 * Send text to the terminal. The text is written to the stdin of the underlying pty process
-		 * (shell) of the terminal.
+		 * Read a previously stored secret from the credential store.
 		 *
-		 * @param text The text to send.
-		 * @param addNewLine Whether to add a new line to the text being sent, this is normally
-		 * required to run a command in the terminal. The character(s) added are \n or \r\n
-		 * depending on the platform. This defaults to `true`.
+		 * @param service The service of the credential.
+		 * @param account The account of the credential.
+		 * @return A promise for the secret of the credential.
 		 */
-		sendText(text: string, addNewLine?: boolean): void;
+		export function readSecret(service: string, account: string): Thenable<string | undefined>;
 
 		/**
-		 * Show the terminal panel and reveal this terminal in the UI.
+		 * Write a secret to the credential store.
 		 *
-		 * @param preserveFocus When `true` the terminal will not take focus.
+		 * @param service The service of the credential.
+		 * @param account The account of the credential.
+		 * @param secret The secret of the credential to write to the credential store.
+		 * @return A promise indicating completion of the operation.
 		 */
-		show(preserveFocus?: boolean): void;
+		export function writeSecret(service: string, account: string, secret: string): Thenable<void>;
 
 		/**
-		 * Hide the terminal panel if this terminal is currently showing.
-		 */
-		hide(): void;
-
-		/**
-		 * Dispose and free associated resources.
-		 */
-		dispose(): void;
-
-		/**
-		 * Experimental API that allows listening to the raw data stream coming from the terminal's
-		 * pty process (including ANSI escape sequences).
+		 * Delete a previously stored secret from the credential store.
 		 *
-		 * @param callback The callback that is triggered when data is sent to the terminal.
+		 * @param service The service of the credential.
+		 * @param account The account of the credential.
+		 * @return A promise resolving to true if there was a secret for that service and account.
 		 */
-		onData(callback: (data: string) => any): void;
+		export function deleteSecret(service: string, account: string): Thenable<boolean>;
 	}
 }

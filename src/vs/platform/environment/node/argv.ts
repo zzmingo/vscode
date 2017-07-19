@@ -20,9 +20,9 @@ const options: minimist.Opts = {
 		'install-extension',
 		'uninstall-extension',
 		'debugBrkPluginHost',
+		'debugId',
 		'debugPluginHost',
 		'open-url',
-		'prof-startup-timers',
 		'enable-proposed-api'
 	],
 	boolean: [
@@ -41,7 +41,8 @@ const options: minimist.Opts = {
 		'disable-extensions',
 		'list-extensions',
 		'show-versions',
-		'nolazy'
+		'nolazy',
+		'skip-getting-started'
 	],
 	alias: {
 		help: 'h',
@@ -147,7 +148,7 @@ export function formatOptions(options: { [name: string]: string; }, columns: num
 			result += '\n';
 		}
 		result += '  ' + k + keyPadding + wrappedDescription[0];
-		for (var i = 1; i < wrappedDescription.length; i++) {
+		for (let i = 1; i < wrappedDescription.length; i++) {
 			result += '\n' + (<any>' ').repeat(argLength) + wrappedDescription[i];
 		}
 	});

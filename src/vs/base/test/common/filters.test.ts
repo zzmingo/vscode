@@ -195,7 +195,7 @@ suite('Filters', () => {
 
 	function assertMatches(pattern: string, word: string, decoratedWord: string, filter: typeof fuzzyScore) {
 		let r = filter(pattern, word);
-		assert.ok(Boolean(r) === Boolean(decoratedWord));
+		assert.ok(!decoratedWord === (!r || r[1].length === 0));
 		if (r) {
 			const [, matches] = r;
 			let pos = 0;
@@ -248,6 +248,7 @@ suite('Filters', () => {
 		assertMatches('ccm', 'cacmelCase', '^ca^c^melCase', fuzzyScore);
 		assertMatches('bti', 'the_black_knight', undefined, fuzzyScore);
 		assertMatches('ccm', 'camelCase', undefined, fuzzyScore);
+		assertMatches('cmcm', 'camelCase', undefined, fuzzyScore);
 		assertMatches('BK', 'the_black_knight', 'the_^black_^knight', fuzzyScore);
 		assertMatches('KeyboardLayout=', 'KeyboardLayout', undefined, fuzzyScore);
 		assertMatches('LLL', 'SVisualLoggerLogsList', 'SVisual^Logger^Logs^List', fuzzyScore);
@@ -305,6 +306,48 @@ suite('Filters', () => {
 		);
 	});
 
+	test('fuzzyScore, issue #26423', function () {
+
+		assertMatches('baba', 'abababab', undefined, fuzzyScore);
+
+		assertMatches(
+			'fsfsfs',
+			'dsafdsafdsafdsafdsafdsafdsafasdfdsa',
+			undefined,
+			fuzzyScore
+		);
+		assertMatches(
+			'fsfsfsfsfsfsfsf',
+			'dsafdsafdsafdsafdsafdsafdsafasdfdsafdsafdsafdsafdsfdsafdsfdfdfasdnfdsajfndsjnafjndsajlknfdsa',
+			undefined,
+			fuzzyScore
+		);
+	});
+
+	test('Fuzzy IntelliSense matching vs Haxe metadata completion, #26995', function () {
+		assertMatches('f', ':Foo', ':^Foo', fuzzyScore);
+		assertMatches('f', ':foo', ':^foo', fuzzyScore);
+	});
+
+	test('Cannot set property \'1\' of undefined, #26511', function () {
+		let word = new Array<void>(123).join('a');
+		let pattern = new Array<void>(120).join('a');
+		fuzzyScore(pattern, word);
+		assert.ok(true); // must not explode
+	});
+
+	test('Vscode 1.12 no longer obeys \'sortText\' in completion items (from language server), #26096', function () {
+		assertMatches('  ', '  group', undefined, fuzzyScore);
+		assertMatches('  g', '  group', '  ^group', fuzzyScore);
+		assertMatches('g', '  group', '  ^group', fuzzyScore);
+		assertMatches('g g', '  groupGroup', undefined, fuzzyScore);
+		assertMatches('g g', '  group Group', '  ^group^ ^Group', fuzzyScore);
+		assertMatches(' g g', '  group Group', '  ^group^ ^Group', fuzzyScore);
+		assertMatches('zz', 'zzGroup', '^z^zGroup', fuzzyScore);
+		assertMatches('zzg', 'zzGroup', '^z^z^Group', fuzzyScore);
+		assertMatches('g', 'zzGroup', 'zz^Group', fuzzyScore);
+	});
+
 	function assertTopScore(filter: typeof fuzzyScore, pattern: string, expected: number, ...words: string[]) {
 		let topScore = -(100 * 10);
 		let topIdx = 0;
@@ -359,6 +402,12 @@ suite('Filters', () => {
 		assertTopScore(fuzzyScore, 'is', 0, 'isValidViewletId', 'import statement');
 
 		assertTopScore(fuzzyScore, 'title', 1, 'files.trimTrailingWhitespace', 'window.title');
+	});
+
+	test('Unexpected suggestion scoring, #28791', function () {
+		assertTopScore(fuzzyScore, '_lines', 1, '_lineStarts', '_lines');
+		assertTopScore(fuzzyScore, '_lines', 1, '_lineS', '_lines');
+		assertTopScore(fuzzyScore, '_lineS', 0, '_lineS', '_lines');
 	});
 
 	test('nextTypoPermutation', function () {

@@ -203,6 +203,12 @@ declare module 'vscode' {
 		 * [word definitions](#LanguageConfiguration.wordPattern) can be defined. It
 		 * is also possible to provide a custom regular expression.
 		 *
+		 * * *Note 1:* A custom regular expression must not match the empty string and
+		 * if it does, it will be ignored.
+		 * * *Note 2:* A custom regular expression will fail to match multiline strings
+		 * and in the name of speed regular expressions should not match words with
+		 * spaces. Use [`TextLine.text`](#TextLine.text) for more complex, non-wordy, scenarios.
+		 *
 		 * The position will be [adjusted](#TextDocument.validatePosition).
 		 *
 		 * @param position A position.
@@ -699,6 +705,28 @@ declare module 'vscode' {
 	}
 
 	/**
+	 * Describes the behavior of decorations when typing/editing at their edges.
+	 */
+	export enum DecorationRangeBehavior {
+		/**
+		 * The decoration's range will widen when edits occur at the start or end.
+		 */
+		OpenOpen = 0,
+		/**
+		 * The decoration's range will not widen when edits occur at the start of end.
+		 */
+		ClosedClosed = 1,
+		/**
+		 * The decoration's range will widen when edits occur at the start, but not at the end.
+		 */
+		OpenClosed = 2,
+		/**
+		 * The decoration's range will widen when edits occur at the end, but not at the start.
+		 */
+		ClosedOpen = 3
+	}
+
+	/**
 	 * Represents options to configure the behavior of showing a [document](#TextDocument) in an [editor](#TextEditor).
 	 */
 	export interface TextDocumentShowOptions {
@@ -719,6 +747,24 @@ declare module 'vscode' {
 		 * with the next editor or if it will be kept.
 		 */
 		preview?: boolean;
+
+		/**
+		 * An optional selection to apply for the document in the [editor](#TextEditor).
+		 */
+		selection?: Range;
+	}
+
+	/**
+	 * A reference to one of the workbench colors as defined in https://code.visualstudio.com/docs/getstarted/theme-color-reference.
+	 * Using a theme color is preferred over a custom color as it gives theme authors and users the possibility to change the color.
+	 */
+	export class ThemeColor {
+
+		/**
+		 * Creates a reference to a theme color.
+		 * @param id of the color. The available colors are listed in https://code.visualstudio.com/docs/getstarted/theme-color-reference.
+		 */
+		constructor(id: string);
 	}
 
 	/**
@@ -727,8 +773,9 @@ declare module 'vscode' {
 	export interface ThemableDecorationRenderOptions {
 		/**
 		 * Background color of the decoration. Use rgba() and define transparent background colors to play well with other decorations.
+		 * Alternativly a color from the color registry an be [referenced](#ColorIdentifier).
 		 */
-		backgroundColor?: string;
+		backgroundColor?: string | ThemeColor;
 
 		/**
 		 * CSS styling property that will be applied to text enclosed by a decoration.
@@ -739,7 +786,7 @@ declare module 'vscode' {
 		 * CSS styling property that will be applied to text enclosed by a decoration.
 		 * Better use 'outline' for setting one or more of the individual outline properties.
 		 */
-		outlineColor?: string;
+		outlineColor?: string | ThemeColor;
 
 		/**
 		 * CSS styling property that will be applied to text enclosed by a decoration.
@@ -762,7 +809,7 @@ declare module 'vscode' {
 		 * CSS styling property that will be applied to text enclosed by a decoration.
 		 * Better use 'border' for setting one or more of the individual border properties.
 		 */
-		borderColor?: string;
+		borderColor?: string | ThemeColor;
 
 		/**
 		 * CSS styling property that will be applied to text enclosed by a decoration.
@@ -801,7 +848,7 @@ declare module 'vscode' {
 		/**
 		 * CSS styling property that will be applied to text enclosed by a decoration.
 		 */
-		color?: string;
+		color?: string | ThemeColor;
 
 		/**
 		 * CSS styling property that will be applied to text enclosed by a decoration.
@@ -823,7 +870,7 @@ declare module 'vscode' {
 		/**
 		 * The color of the decoration in the overview ruler. Use rgba() and define transparent colors to play well with other decorations.
 		 */
-		overviewRulerColor?: string;
+		overviewRulerColor?: string | ThemeColor;
 
 		/**
 		 * Defines the rendering options of the attachment that is inserted before the decorated text
@@ -851,17 +898,21 @@ declare module 'vscode' {
 		 */
 		border?: string;
 		/**
+		 * CSS styling property that will be applied to text enclosed by a decoration.
+		 */
+		borderColor?: string | ThemeColor;
+		/**
 		 * CSS styling property that will be applied to the decoration attachment.
 		 */
 		textDecoration?: string;
 		/**
 		 * CSS styling property that will be applied to the decoration attachment.
 		 */
-		color?: string;
+		color?: string | ThemeColor;
 		/**
 		 * CSS styling property that will be applied to the decoration attachment.
 		 */
-		backgroundColor?: string;
+		backgroundColor?: string | ThemeColor;
 		/**
 		 * CSS styling property that will be applied to the decoration attachment.
 		 */
@@ -885,6 +936,12 @@ declare module 'vscode' {
 		 * Defaults to `false`.
 		 */
 		isWholeLine?: boolean;
+
+		/**
+		 * Customize the growing behavior of the decoration when edits occur at the edges of the decoration's range.
+		 * Defaults to `DecorationRangeBehavior.OpenOpen`.
+		 */
+		rangeBehavior?: DecorationRangeBehavior;
 
 		/**
 		 * The position in the overview ruler where the decoration should be rendered.
@@ -987,7 +1044,7 @@ declare module 'vscode' {
 		 * callback executes.
 		 *
 		 * @param callback A function which can create edits using an [edit-builder](#TextEditorEdit).
-		 * @param options The undo/redo behaviour around this edit. By default, undo stops will be created before and after this edit.
+		 * @param options The undo/redo behavior around this edit. By default, undo stops will be created before and after this edit.
 		 * @return A promise that resolves with a value indicating if the edits could be applied.
 		 */
 		edit(callback: (editBuilder: TextEditorEdit) => void, options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): Thenable<boolean>;
@@ -999,7 +1056,7 @@ declare module 'vscode' {
 		 *
 		 * @param snippet The snippet to insert in this edit.
 		 * @param location Position or range at which to insert the snippet, defaults to the current editor selection or selections.
-		 * @param options The undo/redo behaviour around this edit. By default, undo stops will be created before and after this edit.
+		 * @param options The undo/redo behavior around this edit. By default, undo stops will be created before and after this edit.
 		 * @return A promise that resolves with a value indicating if the snippet could be inserted. Note that the promise does not signal
 		 * that the snippet is completely filled-in or accepted.
 		 */
@@ -1025,19 +1082,19 @@ declare module 'vscode' {
 		revealRange(range: Range, revealType?: TextEditorRevealType): void;
 
 		/**
-		 * Show the text editor.
+		 * ~~Show the text editor.~~
 		 *
-		 * @deprecated **This method is deprecated.** Use [window.showTextDocument](#window.showTextDocument)
-		 * instead. This method shows unexpected behavior and will be removed in the next major update.
+		 * @deprecated Use [window.showTextDocument](#window.showTextDocument)
 		 *
 		 * @param column The [column](#ViewColumn) in which to show this editor.
+		 * instead. This method shows unexpected behavior and will be removed in the next major update.
 		 */
 		show(column?: ViewColumn): void;
 
 		/**
-		 * Hide the text editor.
+		 * ~~Hide the text editor.~~
 		 *
-		 * @deprecated **This method is deprecated.** Use the command 'workbench.action.closeActiveEditor' instead.
+		 * @deprecated Use the command `workbench.action.closeActiveEditor` instead.
 		 * This method shows unexpected behavior and will be removed in the next major update.
 		 */
 		hide(): void;
@@ -1379,7 +1436,7 @@ declare module 'vscode' {
 		 * Provide textual content for a given uri.
 		 *
 		 * The editor will use the returned string-content to create a readonly
-		 * [document](TextDocument). Resources allocated should be released when
+		 * [document](#TextDocument). Resources allocated should be released when
 		 * the corresponding document has been [closed](#workspace.onDidCloseTextDocument).
 		 *
 		 * @param uri An uri which scheme matches the scheme this provider was [registered](#workspace.registerTextDocumentContentProvider) for.
@@ -1949,9 +2006,9 @@ declare module 'vscode' {
 		constructor(name: string, kind: SymbolKind, containerName: string, location: Location);
 
 		/**
-		 * @deprecated Please use the constructor taking a [location](#Location) object.
+		 * ~~Creates a new symbol information object.~~
 		 *
-		 * Creates a new symbol information object.
+		 * @deprecated Please use the constructor taking a [location](#Location) object.
 		 *
 		 * @param name The name of the symbol.
 		 * @param kind The kind of the symbol.
@@ -2559,7 +2616,7 @@ declare module 'vscode' {
 		commitCharacters?: string[];
 
 		/**
-		 * @deprecated **Deprecated** in favor of `CompletionItem.insertText` and `CompletionItem.range`.
+		 * @deprecated Use `CompletionItem.insertText` and `CompletionItem.range` instead.
 		 *
 		 * ~~An [edit](#TextEdit) which is applied to a document when selecting
 		 * this completion. When an edit is provided the value of
@@ -3161,7 +3218,7 @@ declare module 'vscode' {
 	}
 
 	/**
-	 * Denotes a column in the VS Code window. Columns are
+	 * Denotes a column in the editor window. Columns are
 	 * used to show editors side by side.
 	 */
 	export enum ViewColumn {
@@ -3211,10 +3268,9 @@ declare module 'vscode' {
 		show(preserveFocus?: boolean): void;
 
 		/**
-		 * Reveal this channel in the UI.
+		 * ~~Reveal this channel in the UI.~~
 		 *
-		 * @deprecated This method is **deprecated** and the overload with
-		 * just one parameter should be used (`show(preserveFocus?: boolean): void`).
+		 * @deprecated Use the overload with just one parameter (`show(preserveFocus?: boolean): void`).
 		 *
 		 * @param column This argument is **deprecated** and will be ignored.
 		 * @param preserveFocus When `true` the channel will not take focus.
@@ -3283,7 +3339,7 @@ declare module 'vscode' {
 		/**
 		 * The foreground color for this entry.
 		 */
-		color: string | undefined;
+		color: string | ThemeColor | undefined;
 
 		/**
 		 * The identifier of a command to run on click. The command must be
@@ -3487,6 +3543,326 @@ declare module 'vscode' {
 		 * @param value A value. MUST not contain cyclic references.
 		 */
 		update(key: string, value: any): Thenable<void>;
+	}
+
+	/**
+	 * Controls the behaviour of the terminal's visibility.
+	 */
+	export enum TaskRevealKind {
+		/**
+		 * Always brings the terminal to front if the task is executed.
+		 */
+		Always = 1,
+
+		/**
+		 * Only brings the terminal to front if a problem is detected executing the task
+		 * (e.g. the task couldn't be started because).
+		 */
+		Silent = 2,
+
+		/**
+		 * The terminal never comes to front when the task is executed.
+		 */
+		Never = 3
+	}
+
+	/**
+	 * Controls how the task channel is used between tasks
+	 */
+	export enum TaskPanelKind {
+
+		/**
+		 * Shares a panel with other tasks. This is the default.
+		 */
+		Shared = 1,
+
+		/**
+		 * Uses a dedicated panel for this tasks. The panel is not
+		 * shared with other tasks.
+		 */
+		Dedicated = 2,
+
+		/**
+		 * Creates a new panel whenever this task is executed.
+		 */
+		New = 3
+	}
+
+	/**
+	 * Controls how the task is presented in the UI.
+	 */
+	export interface TaskPresentationOptions {
+		/**
+		 * Controls whether the task output is reveal in the user interface.
+		 * Defaults to `RevealKind.Always`.
+		 */
+		reveal?: TaskRevealKind;
+
+		/**
+		 * Controls whether the command associated with the task is echoed
+		 * in the user interface.
+		 */
+		echo?: boolean;
+
+		/**
+		 * Controls whether the panel showing the task output is taking focus.
+		 */
+		focus?: boolean;
+
+		/**
+		 * Controls if the task panel is used for this task only (dedicated),
+		 * shared between tasks (shared) or if a new panel is created on
+		 * every task execution (new). Defaults to `TaskInstanceKind.Shared`
+		 */
+		panel?: TaskPanelKind;
+	}
+
+	/**
+	 * A grouping for tasks. The editor by default supports the
+	 * 'Clean', 'Build', 'RebuildAll' and 'Test' group.
+	 */
+	export class TaskGroup {
+
+		/**
+		 * The clean task group;
+		 */
+		public static Clean: TaskGroup;
+
+		/**
+		 * The build task group;
+		 */
+		public static Build: TaskGroup;
+
+		/**
+		 * The rebuild all task group;
+		 */
+		public static Rebuild: TaskGroup;
+
+		/**
+		 * The test all task group;
+		 */
+		public static Test: TaskGroup;
+
+		private constructor(id: string, label: string);
+	}
+
+
+	/**
+	 * A structure that defines a task kind in the system.
+	 * The value must be JSON-stringifyable.
+	 */
+	export interface TaskDefinition {
+		/**
+		 * The task definition descibing the task provided by an extension.
+		 * Usually a task provider defines more properties to identify
+		 * a task. They need to be defined in the package.json of the
+		 * extension under the 'taskDefinitions' extension point. The npm
+		 * task definition for example looks like this
+		 * ```typescript
+		 * interface NpmTaskDefinition extends TaskDefinition {
+		 *     script: string;
+		 * }
+		 * ```
+		 */
+		readonly type: string;
+
+		/**
+		 * Additional attributes of a concrete task definition.
+		 */
+		[name: string]: any;
+	}
+
+	/**
+	 * Options for a process execution
+	 */
+	export interface ProcessExecutionOptions {
+		/**
+		 * The current working directory of the executed program or shell.
+		 * If omitted the tools current workspace root is used.
+		 */
+		cwd?: string;
+
+		/**
+		 * The additional environment of the executed program or shell. If omitted
+		 * the parent process' environment is used. If provided it is merged with
+		 * the parent process' environment.
+		 */
+		env?: { [key: string]: string };
+	}
+
+	/**
+	 * The execution of a task happens as an external process
+	 * without shell interaction.
+	 */
+	export class ProcessExecution {
+
+		/**
+		 * Creates a process execution.
+		 *
+		 * @param process The process to start.
+		 * @param options Optional options for the started process.
+		 */
+		constructor(process: string, options?: ProcessExecutionOptions);
+
+		/**
+		 * Creates a process execution.
+		 *
+		 * @param process The process to start.
+		 * @param args Arguments to be passed to the process.
+		 * @param options Optional options for the started process.
+		 */
+		constructor(process: string, args: string[], options?: ProcessExecutionOptions);
+
+		/**
+		 * The process to be executed.
+		 */
+		process: string;
+
+		/**
+		 * The arguments passed to the process. Defaults to an empty array.
+		 */
+		args: string[];
+
+		/**
+		 * The process options used when the process is executed.
+		 * Defaults to undefined.
+		 */
+		options?: ProcessExecutionOptions;
+	}
+
+	/**
+	 * Options for a shell execution
+	 */
+	export interface ShellExecutionOptions {
+		/**
+		 * The shell executable.
+		 */
+		executable?: string;
+
+		/**
+		 * The arguments to be passed to the shell executable used to run the task.
+		 */
+		shellArgs?: string[];
+
+		/**
+		 * The current working directory of the executed shell.
+		 * If omitted the tools current workspace root is used.
+		 */
+		cwd?: string;
+
+		/**
+		 * The additional environment of the executed shell. If omitted
+		 * the parent process' environment is used. If provided it is merged with
+		 * the parent process' environment.
+		 */
+		env?: { [key: string]: string };
+	}
+
+
+	export class ShellExecution {
+		/**
+		 * Creates a process execution.
+		 *
+		 * @param commandLine The command line to execute.
+		 * @param options Optional options for the started the shell.
+		 */
+		constructor(commandLine: string, options?: ShellExecutionOptions);
+
+		/**
+		 * The shell command line
+		 */
+		commandLine: string;
+
+		/**
+		 * The shell options used when the command line is executed in a shell.
+		 * Defaults to undefined.
+		 */
+		options?: ShellExecutionOptions;
+	}
+
+	/**
+	 * A task to execute
+	 */
+	export class Task {
+
+		/**
+		 * Creates a new task.
+		 *
+		 * @param definition The task definition as defined in the taskDefintions extension point.
+		 * @param name The task's name. Is presented in the user interface.
+		 * @param source The task's source (e.g. 'gulp', 'npm', ...). Is presented in the user interface.
+		 * @param execution The process or shell execution.
+		 * @param problemMatchers the names of problem matchers to use, like '$tsc'
+		 *  or '$eslint'. Problem matchers can be contributed by an extension using
+		 *  the `problemMatchers` extension point.
+		 */
+		constructor(taskDefinition: TaskDefinition, name: string, source: string, execution?: ProcessExecution | ShellExecution, problemMatchers?: string | string[]);
+
+		/**
+		 * The task's definition.
+		 */
+		definition: TaskDefinition;
+
+		/**
+		 * The task's name
+		 */
+		name: string;
+
+		/**
+		 * The task's execution engine
+		 */
+		execution: ProcessExecution | ShellExecution;
+
+		/**
+		 * Whether the task is a background task or not.
+		 */
+		isBackground: boolean;
+
+		/**
+		 * A human-readable string describing the source of this
+		 * shell task, e.g. 'gulp' or 'npm'.
+		 */
+		source: string;
+
+		/**
+		 * The task group this tasks belongs to. See TaskGroup
+		 * for a predefined set of available groups.
+		 * Defaults to undefined meaning that the task doesn't
+		 * belong to any special group.
+		 */
+		group?: TaskGroup;
+
+		/**
+		 * The presentation options. Defaults to an empty literal.
+		 */
+		presentationOptions: TaskPresentationOptions;
+
+		/**
+		 * The problem matchers attached to the task. Defaults to an empty
+		 * array.
+		 */
+		problemMatchers: string[];
+	}
+
+	/**
+	 * A task provider allows to add tasks to the task service.
+	 * A task provider is registerd via #workspace.registerTaskProvider.
+	 */
+	export interface TaskProvider {
+		/**
+		 * Provides tasks.
+		 * @param token A cancellation token.
+		 * @return an array of tasks
+		 */
+		provideTasks(token?: CancellationToken): ProviderResult<Task[]>;
+
+		/**
+		 * Resolves a task the has no execution set.
+		 * @param task The task to resolve.
+		 * @param token A cancellation token.
+		 * @return the resolved task
+		 */
+		resolveTask(task: Task, token?: CancellationToken): ProviderResult<Task>;
 	}
 
 	/**
@@ -3909,10 +4285,10 @@ declare module 'vscode' {
 		export function setStatusBarMessage(text: string): Disposable;
 
 		/**
-		 * @deprecated This function **deprecated**. Use `withProgress` instead.
-		 *
 		 * ~~Show progress in the Source Control viewlet while running the given callback and while
 		 * its returned promise isn't resolve or rejected.~~
+		 *
+		 * @deprecated Use `withProgress` instead.
 		 *
 		 * @param task A callback returning a promise. Progress increments can be reported with
 		 * the provided [progress](#Progress)-object.
@@ -3959,6 +4335,106 @@ declare module 'vscode' {
 		 * @return A new Terminal.
 		 */
 		export function createTerminal(options: TerminalOptions): Terminal;
+
+		/**
+		 * Register a [TreeDataProvider](#TreeDataProvider) for the view contributed using the extension point `views`.
+		 * @param viewId Id of the view contributed using the extension point `views`.
+		 * @param treeDataProvider A [TreeDataProvider](#TreeDataProvider) that provides tree data for the view
+		 */
+		export function registerTreeDataProvider<T>(viewId: string, treeDataProvider: TreeDataProvider<T>): Disposable;
+	}
+
+	/**
+	 * A data provider that provides tree data
+	 */
+	export interface TreeDataProvider<T> {
+		/**
+		 * An optional event to signal that an element or root has changed.
+		 * To signal that root has changed, do not pass any argument or pass `undefined` or `null`.
+		 */
+		onDidChangeTreeData?: Event<T | undefined | null>;
+
+		/**
+		 * Get [TreeItem](#TreeItem) representation of the `element`
+		 *
+		 * @param element The element for which [TreeItem](#TreeItem) representation is asked for.
+		 * @return [TreeItem](#TreeItem) representation of the element
+		 */
+		getTreeItem(element: T): TreeItem | Thenable<TreeItem>;
+
+		/**
+		 * Get the children of `element` or root if no element is passed.
+		 *
+		 * @param element The element from which the provider gets children. Can be `undefined`.
+		 * @return Children of `element` or root if no element is passed.
+		 */
+		getChildren(element?: T): ProviderResult<T[]>;
+	}
+
+	export class TreeItem {
+		/**
+		 * A human-readable string describing this item
+		 */
+		label: string;
+
+		/**
+		 * The icon path for the tree item
+		 */
+		iconPath?: string | Uri | { light: string | Uri; dark: string | Uri };
+
+		/**
+		 * The [command](#Command) which should be run when the tree item is selected.
+		 */
+		command?: Command;
+
+		/**
+		 * [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item.
+		 */
+		collapsibleState?: TreeItemCollapsibleState;
+
+		/**
+		 * Context value of the tree item. This can be used to contribute item specific actions in the tree.
+		 * For example, a tree item is given a context value as `folder`. When contributing actions to `view/item/context`
+		 * using `menus` extension point, you can specify context value for key `viewItem` in `when` expression like `viewItem == folder`.
+		 * ```
+		 *	"contributes": {
+		 *		"menus": {
+		 *			"view/item/context": [
+		 *				{
+		 *					"command": "extension.deleteFolder",
+		 *					"when": "viewItem == folder"
+		 *				}
+		 *			]
+		 *		}
+		 *	}
+		 * ```
+		 * This will show action `extension.deleteFolder` only for items with `contextValue` is `folder`.
+		 */
+		contextValue?: string;
+
+		/**
+		 * @param label A human-readable string describing this item
+		 * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+		 */
+		constructor(label: string, collapsibleState?: TreeItemCollapsibleState);
+	}
+
+	/**
+	 * Collapsible state of the tree item
+	 */
+	export enum TreeItemCollapsibleState {
+		/**
+		 * Determines an item can be neither collapsed nor expanded. Implies it has no children.
+		 */
+		None = 0,
+		/**
+		 * Determines an item is collapsed
+		 */
+		Collapsed = 1,
+		/**
+		 * Determines an item is expanded
+		 */
+		Expanded = 2
 	}
 
 	/**
@@ -4124,6 +4600,44 @@ declare module 'vscode' {
 	}
 
 	/**
+	 * An event describing a change to the set of [workspace folders](#workspace.workspaceFolders).
+	 */
+	export interface WorkspaceFoldersChangeEvent {
+		/**
+		 * Added workspace folders.
+		 */
+		readonly added: WorkspaceFolder[];
+
+		/**
+		 * Removed workspace folders.
+		 */
+		readonly removed: WorkspaceFolder[];
+	}
+
+	/**
+	 * A workspace folder is one of potentially many roots opened by the editor. All workspace folders
+	 * are equal which means there is notion of an active or master workspace folder.
+	 */
+	export interface WorkspaceFolder {
+
+		/**
+		 * The associated URI for this workspace folder.
+		 */
+		readonly uri: Uri;
+
+		/**
+		 * The name of this workspace folder. Defaults to
+		 * the basename its [uri-path](#Uri.path)
+		 */
+		readonly name: string;
+
+		/**
+		 * The ordinal number of this workspace folder.
+		 */
+		readonly index: number;
+	}
+
+	/**
 	 * Namespace for dealing with the current workspace. A workspace is the representation
 	 * of the folder that has been opened. There is no workspace when just a file but not a
 	 * folder has been opened.
@@ -4135,10 +4649,55 @@ declare module 'vscode' {
 	export namespace workspace {
 
 		/**
+		 * ~~The folder that is open in the editor. `undefined` when no folder
+		 * has been opened.~~
+		 *
+		 * @deprecated Use [`workspaceFolders`](#workspace.workspaceFolders) instead.
+		 *
+		 * @readonly
+		 */
+		export let rootPath: string | undefined;
+
+		/**
+		 * List of workspace folders or `undefined` when no folder is open, `undefined` when no
+		 * folder has been opened. *Note* that the first entry corresponds to the value of `rootPath`.
+		 *
+		 * @readonly
+		 */
+		export let workspaceFolders: WorkspaceFolder[] | undefined;
+
+		/**
+		 * An event that is emitted when a workspace folder is added or removed.
+		 */
+		export const onDidChangeWorkspaceFolders: Event<WorkspaceFoldersChangeEvent>;
+
+		/**
+		 * Returns a [workspace folder](#WorkspaceFolder) for the provided resource. When the resource
+		 * is a workspace folder itself, its parent workspace folder or `undefined` is returned.
+		 *
+		 * @param uri An uri.
+		 * @return A workspace folder or `undefined`
+		 */
+		export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | undefined;
+
+		/**
+		 * Returns a path that is relative to the workspace folder or folders.
+		 *
+		 * When there are no [workspace folders](#workspace.workspaceFolders) or when the path
+		 * is not a child of them, the input is returned.
+		 *
+		 * @param pathOrUri A path or uri. When a uri is given its [fsPath](#Uri.fsPath) is used.
+		 * @return A path relative to the root or the input.
+		 */
+		export function asRelativePath(pathOrUri: string | Uri): string;
+
+		/**
 		 * Creates a file system watcher.
 		 *
 		 * A glob pattern that filters the file events must be provided. Optionally, flags to ignore certain
 		 * kinds of events can be provided. To stop listening to events the watcher must be disposed.
+		 *
+		 * *Note* that only files within the current [workspace](#workspace.rootPath) can be watched.
 		 *
 		 * @param globPattern A glob pattern that is applied to the names of created, changed, and deleted files.
 		 * @param ignoreCreateEvents Ignore when files have been created.
@@ -4147,25 +4706,6 @@ declare module 'vscode' {
 		 * @return A new file system watcher instance.
 		 */
 		export function createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher;
-
-		/**
-		 * The folder that is open in VS Code. `undefined` when no folder
-		 * has been opened.
-		 *
-		 * @readonly
-		 */
-		export let rootPath: string | undefined;
-
-		/**
-		 * Returns a path that is relative to the workspace root.
-		 *
-		 * When there is no [workspace root](#workspace.rootPath) or when the path
-		 * is not a child of that folder, the input is returned.
-		 *
-		 * @param pathOrUri A path or uri. When a uri is given its [fsPath](#Uri.fsPath) is used.
-		 * @return A path relative to the root or the input.
-		 */
-		export function asRelativePath(pathOrUri: string | Uri): string;
 
 		/**
 		 * Find files in the workspace.
@@ -4267,7 +4807,9 @@ declare module 'vscode' {
 		export const onDidCloseTextDocument: Event<TextDocument>;
 
 		/**
-		 * An event that is emitted when a [text document](#TextDocument) is changed.
+		 * An event that is emitted when a [text document](#TextDocument) is changed. This usually happens
+		 * when the [contents](#TextDocument.getText) changes but also when other things like the
+		 * [dirty](TextDocument#isDirty)-state changes.
 		 */
 		export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
 
@@ -4307,6 +4849,15 @@ declare module 'vscode' {
 		 * An event that is emitted when the [configuration](#WorkspaceConfiguration) changed.
 		 */
 		export const onDidChangeConfiguration: Event<void>;
+
+		/**
+		 * Register a task provider.
+		 *
+		 * @param type The task kind type this provider is registered for.
+		 * @param provider A task provider.
+		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+		 */
+		export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
 	}
 
 	/**
@@ -4837,6 +5388,121 @@ declare module 'vscode' {
 	}
 
 	/**
+	 * Configuration for a debug session.
+	 */
+	export interface DebugConfiguration {
+		/**
+		 * The type for the debug session.
+		 */
+		type: string;
+
+		/**
+		 * An optional name for the debug session.
+		 */
+		name?: string;
+
+		/**
+		 * The request type of the debug session.
+		 */
+		request: string;
+
+		/**
+		 * Additional debug type specific properties.
+		 */
+		[key: string]: any;
+	}
+
+	/**
+	 * A debug session.
+	 */
+	export interface DebugSession {
+
+		/**
+		 * The unique ID of this debug session.
+		 */
+		readonly id: string;
+
+		/**
+		 * The debug session's type from the debug configuration.
+		 */
+		readonly type: string;
+
+		/**
+		 * The debug session's name from the debug configuration.
+		 */
+		readonly name: string;
+
+		/**
+		 * Send a custom request to the debug adapter.
+		 */
+		customRequest(command: string, args?: any): Thenable<any>;
+	}
+
+	/**
+	 * A custom Debug Adapter Protocol event received from a [debug session](#DebugSession).
+	 */
+	export interface DebugSessionCustomEvent {
+		/**
+		 * The [debug session](#DebugSession) for which the custom event was received.
+		 */
+		session: DebugSession;
+
+		/**
+		 * Type of event.
+		 */
+		event: string;
+
+		/**
+		 * Event specific information.
+		 */
+		body?: any;
+	}
+
+	/**
+	 * Namespace for dealing with debug sessions.
+	 */
+	export namespace debug {
+
+		/**
+		 * Start a debug session based on the given configuration.
+		 * The configuration's type is used to select the debug adapter and then is directly passed to the adapter without modification.
+		 * This function should only be called in the context of a 'startSession' command, e.g. after verifying or massaging the configuration.
+		 * @param configuration The debug configuration that is directly passed to the debug adapter.
+		 * @return A thenable that resolves when the debug session could be successfully started.
+		 */
+		export function startDebugSession(configuration: DebugConfiguration): Thenable<DebugSession>;
+
+		/**
+		 * The currently active debug session or `undefined`. The active debug session is the one
+		 * represented by the debug action floating window or the one currently shown in the drop down menu of the debug action floating window.
+		 * If no debug session is active, the value is `undefined`.
+		 */
+		export let activeDebugSession: DebugSession | undefined;
+
+		/**
+		 * An [event](#Event) which fires when the [active debug session](#debug.activeDebugSession)
+		 * has changed. *Note* that the event also fires when the active debug session changes
+		 * to `undefined`.
+		 */
+		export const onDidChangeActiveDebugSession: Event<DebugSession | undefined>;
+
+		/**
+		 * An [event](#Event) which fires when a new debug session has been started.
+		 */
+		export const onDidStartDebugSession: Event<DebugSession>;
+
+		/**
+		 * An [event](#Event) which fires when a custom DAP event is received from the debug session.
+		 */
+		export const onDidReceiveDebugSessionCustomEvent: Event<DebugSessionCustomEvent>;
+
+		/**
+		 * An [event](#Event) which fires when a debug session has terminated.
+		 */
+		export const onDidTerminateDebugSession: Event<DebugSession>;
+	}
+
+	/**
 	 * Namespace for dealing with installed extensions. Extensions are represented
 	 * by an [extension](#Extension)-interface which allows to reflect on them.
 	 *
@@ -4897,7 +5563,7 @@ declare module 'vscode' {
  * Thenable is a common denominator between ES6 promises, Q, jquery.Deferred, WinJS.Promise,
  * and others. This API makes no assumption about what promise libary is being used which
  * enables reusing existing code without migrating to a specific promise implementation. Still,
- * we recommend the use of native promises which are available in VS Code.
+ * we recommend the use of native promises which are available in this editor.
  */
 interface Thenable<T> {
 	/**

@@ -271,6 +271,7 @@
 		"inputValidation.errorBorder": "#AB395B",
 
 		"badge.background": "#0063a5",
+		"progressBar.background": "#0063a5",
 
 		"dropdown.background": "#181f2f",
 		// "dropdown.foreground": "",
@@ -407,6 +408,10 @@
 		// Workbench: Quick Open
 		"pickerGroup.border": "#596F99",
 		"pickerGroup.foreground": "#596F99",
+
+		// Workbench: Extensions
+		"extensionButton.prominentBackground": "#5f8b3b",
+		"extensionButton.prominentHoverBackground": "#5f8b3bbb",
 
 		// Workbench: Terminal
 		"terminal.ansiBlack": "#111111",

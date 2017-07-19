@@ -25,6 +25,8 @@ import { VIEWLET_ID } from 'vs/workbench/parts/scm/common/scm';
 import { FileLabel } from 'vs/workbench/browser/labels';
 import { CountBadge } from 'vs/base/browser/ui/countBadge/countBadge';
 import { ISCMService, ISCMProvider, ISCMResourceGroup, ISCMResource } from 'vs/workbench/services/scm/common/scm';
+import { IEditorGroupService } from 'vs/workbench/services/group/common/groupService';
+import { IWorkbenchEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IContextViewService, IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -44,6 +46,9 @@ import { comparePaths } from 'vs/base/common/comparers';
 import { isSCMResource } from './scmUtil';
 import { attachInputBoxStyler, attachListStyler, attachBadgeStyler } from 'vs/platform/theme/common/styler';
 import Severity from 'vs/base/common/severity';
+import { IViewletViewOptions } from 'vs/workbench/parts/views/browser/views';
+import { SplitView } from 'vs/base/browser/ui/splitview/splitview';
+import { DeploymentView } from './deploymentView';
 
 // TODO@Joao
 // Need to subclass MenuItemActionItem in order to respect
@@ -226,6 +231,7 @@ export class SCMViewlet extends Viewlet {
 	private inputBox: InputBox;
 	private listContainer: HTMLElement;
 	private list: List<ISCMResourceGroup | ISCMResource>;
+	private deploymentSplitView: SplitView;
 	private menus: SCMMenus;
 	private providerChangeDisposable: IDisposable = EmptyDisposable;
 	private disposables: IDisposable[] = [];
@@ -243,7 +249,9 @@ export class SCMViewlet extends Viewlet {
 		@IThemeService protected themeService: IThemeService,
 		@IMenuService private menuService: IMenuService,
 		@IModelService private modelService: IModelService,
-		@ICommandService private commandService: ICommandService
+		@ICommandService private commandService: ICommandService,
+		@IEditorGroupService private groupService: IEditorGroupService,
+		@IWorkbenchEditorService private editorService: IWorkbenchEditorService
 	) {
 		super(VIEWLET_ID, telemetryService, themeService);
 
@@ -254,7 +262,11 @@ export class SCMViewlet extends Viewlet {
 
 	private setActiveProvider(activeProvider: ISCMProvider | undefined): void {
 		this.providerChangeDisposable.dispose();
+		const updateLayout = (this.activeProvider && this.activeProvider.id === 'git') !== (activeProvider && activeProvider.id === 'git');
 		this.activeProvider = activeProvider;
+		if (updateLayout) {
+			this.layout();
+		}
 
 		if (activeProvider) {
 			const disposables = [activeProvider.onDidChange(this.update, this)];
@@ -312,6 +324,19 @@ export class SCMViewlet extends Viewlet {
 			keyboardSupport: false
 		});
 
+		const options: IViewletViewOptions = {
+			id: DeploymentView.ID,
+			name: DeploymentView.NAME,
+			actionRunner: this.actionRunner,
+			collapsed: false,
+			viewletSettings: null
+		};
+		this.deploymentSplitView = new SplitView(root);
+		const view = this.instantiationService.createInstance(DeploymentView, options);
+		this.disposables.push(view.addListener('change', () => this.layout()));
+		this.deploymentSplitView.addView(view);
+		this.disposables.push(this.deploymentSplitView);
+
 		this.disposables.push(attachListStyler(this.list, this.themeService));
 		this.disposables.push(this.listService.register(this.list));
 
@@ -319,6 +344,11 @@ export class SCMViewlet extends Viewlet {
 			.map(e => e.elements[0])
 			.filter(e => !!e && isSCMResource(e))
 			.on(this.open, this, this.disposables);
+
+		chain(this.list.onPin)
+			.map(e => e.elements[0])
+			.filter(e => !!e && isSCMResource(e))
+			.on(this.pin, this, this.disposables);
 
 		this.list.onContextMenu(this.onListContextMenu, this, this.disposables);
 		this.disposables.push(this.list);
@@ -381,9 +411,12 @@ export class SCMViewlet extends Viewlet {
 		this.inputBox.layout();
 
 		const editorHeight = this.inputBox.height;
-		const listHeight = dimension.height - (editorHeight + 12 /* margin */);
+		const deploymentHeight = this.activeProvider && this.activeProvider.id === 'git' ? (this.deploymentSplitView.getViews<DeploymentView>()[0].isExpanded() ? DeploymentView.HEIGHT : DeploymentView.HEADER_HEIGHT) : 0;
+		const listHeight = dimension.height - (editorHeight + 12 /* margin */) - deploymentHeight;
 		this.listContainer.style.height = `${listHeight}px`;
 		this.list.layout(listHeight);
+
+		this.deploymentSplitView.layout(deploymentHeight);
 
 		toggleClass(this.inputBoxContainer, 'scroll', editorHeight >= 134);
 	}
@@ -404,6 +437,12 @@ export class SCMViewlet extends Viewlet {
 
 		this.commandService.executeCommand(e.command.id, ...e.command.arguments)
 			.done(undefined, onUnexpectedError);
+	}
+
+	private pin(): void {
+		const activeEditor = this.editorService.getActiveEditor();
+		const activeEditorInput = this.editorService.getActiveEditorInput();
+		this.groupService.pinEditor(activeEditor.position, activeEditorInput);
 	}
 
 	getTitle(): string {

@@ -12,7 +12,7 @@ import { firstIndex } from 'vs/base/common/arrays';
 import { KeyMod, KeyChord, KeyCode } from 'vs/base/common/keyCodes';
 import { SyncActionDescriptor } from 'vs/platform/actions/common/actions';
 import { IMessageService, Severity } from 'vs/platform/message/common/message';
-import { Registry } from 'vs/platform/platform';
+import { Registry } from 'vs/platform/registry/common/platform';
 import { IWorkbenchActionRegistry, Extensions } from 'vs/workbench/common/actionRegistry';
 import { IQuickOpenService, IPickOpenEntry } from 'vs/platform/quickOpen/common/quickOpen';
 import { IWorkbenchThemeService, COLOR_THEME_SETTING, ICON_THEME_SETTING } from 'vs/workbench/services/themes/common/workbenchThemeService';
@@ -65,13 +65,12 @@ export class SelectColorThemeAction extends Action {
 
 				this.themeService.setColorTheme(theme.id, target).done(null,
 					err => {
-						this.messageService.show(Severity.Info, localize('problemChangingTheme', "Problem setting theme: {0}", err));
 						this.themeService.setColorTheme(currentTheme.id, null);
 					}
 				);
 			};
 
-			const placeHolder = localize('themes.selectTheme', "Select Color Theme");
+			const placeHolder = localize('themes.selectTheme', "Select Color Theme (Up/Down Keys to Preview)");
 			const autoFocusIndex = firstIndex(picks, p => p.id === currentTheme.id);
 			const delayer = new Delayer<void>(100);
 

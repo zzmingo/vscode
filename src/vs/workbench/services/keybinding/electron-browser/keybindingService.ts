@@ -18,7 +18,7 @@ import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IKeybindingEvent, IUserFriendlyKeybinding, KeybindingSource, IKeyboardEvent } from 'vs/platform/keybinding/common/keybinding';
 import { ContextKeyExpr, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IKeybindingItem, KeybindingsRegistry, IKeybindingRule2 } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { Registry } from 'vs/platform/platform';
+import { Registry } from 'vs/platform/registry/common/platform';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { keybindingsTelemetry } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IMessageService } from 'vs/platform/message/common/message';
@@ -36,6 +36,7 @@ import { MacLinuxFallbackKeyboardMapper } from 'vs/workbench/services/keybinding
 import Event, { Emitter } from 'vs/base/common/event';
 import { Extensions as ConfigExtensions, IConfigurationRegistry, IConfigurationNode } from 'vs/platform/configuration/common/configurationRegistry';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { onUnexpectedError } from "vs/base/common/errors";
 
 export class KeyboardMapperFactory {
 	public static INSTANCE = new KeyboardMapperFactory();
@@ -126,8 +127,9 @@ export class KeyboardMapperFactory {
 	}
 
 	private static _createKeyboardMapper(isISOKeyboard: boolean, layoutInfo: nativeKeymap.IKeyboardLayoutInfo, rawMapping: nativeKeymap.IKeyboardMapping): IKeyboardMapper {
+		const isUSStandard = KeyboardMapperFactory._isUSStandard(layoutInfo);
 		if (OS === OperatingSystem.Windows) {
-			return new WindowsKeyboardMapper(<IWindowsKeyboardMapping>rawMapping);
+			return new WindowsKeyboardMapper(isUSStandard, <IWindowsKeyboardMapping>rawMapping);
 		}
 
 		if (Object.keys(rawMapping).length === 0) {
@@ -143,7 +145,6 @@ export class KeyboardMapperFactory {
 			}
 		}
 
-		const isUSStandard = KeyboardMapperFactory._isUSStandard(layoutInfo);
 		return new MacLinuxKeyboardMapper(isISOKeyboard, isUSStandard, <IMacLinuxKeyboardMapping>rawMapping, OS);
 	}
 
@@ -210,7 +211,7 @@ let keybindingType: IJSONSchema = {
 			type: 'string'
 		},
 		key: {
-			description: nls.localize('vscode.extension.contributes.keybindings.key', 'Key or key sequence (separate keys with plus-sign and sequences with space, e.g Ctrl+O and Ctrl+L L for a chord'),
+			description: nls.localize('vscode.extension.contributes.keybindings.key', 'Key or key sequence (separate keys with plus-sign and sequences with space, e.g Ctrl+O and Ctrl+L L for a chord).'),
 			type: 'string'
 		},
 		mac: {
@@ -266,10 +267,10 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@ICommandService commandService: ICommandService,
 		@ITelemetryService private telemetryService: ITelemetryService,
-		@IMessageService private messageService: IMessageService,
+		@IMessageService messageService: IMessageService,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IStatusbarService statusBarService: IStatusbarService,
-		@IConfigurationService private configurationService: IConfigurationService
+		@IConfigurationService configurationService: IConfigurationService
 	) {
 		super(contextKeyService, commandService, messageService, statusBarService);
 
@@ -294,7 +295,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		this._cachedResolver = null;
 		this._firstTimeComputingResolver = true;
 
-		this.userKeybindings = new ConfigWatcher(environmentService.appKeybindingsPath, { defaultConfig: [] });
+		this.userKeybindings = new ConfigWatcher(environmentService.appKeybindingsPath, { defaultConfig: [], onError: error => onUnexpectedError(error) });
 		this.toDispose.push(toDisposable(() => this.userKeybindings.dispose()));
 
 		keybindingsExtPoint.setHandler((extensions) => {

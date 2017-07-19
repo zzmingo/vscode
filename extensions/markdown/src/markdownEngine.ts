@@ -20,6 +20,8 @@ interface MarkdownIt {
 	parse(text: string, env: any): IToken[];
 
 	utils: any;
+
+	set(options: any): MarkdownIt;
 }
 
 const FrontMatterRegex = /^---\s*[^]*?(-{3}|\.{3})\s*/;
@@ -79,6 +81,7 @@ export class MarkdownEngine {
 			this.addLinkNormalizer(this.md);
 			this.addLinkValidator(this.md);
 		}
+		this.md.set({ breaks: vscode.workspace.getConfiguration('markdown').get('preview.breaks', false) });
 		return this.md;
 	}
 
@@ -141,7 +144,10 @@ export class MarkdownEngine {
 				if (!uri.scheme && uri.path && !uri.fragment) {
 					// Assume it must be a file
 					if (uri.path[0] === '/') {
-						uri = vscode.Uri.file(path.join(vscode.workspace.rootPath || '', uri.path));
+						const root = vscode.workspace.getWorkspaceFolder(this.currentDocument);
+						if (root) {
+							uri = vscode.Uri.file(path.join(root.uri.fsPath, uri.path));
+						}
 					} else {
 						uri = vscode.Uri.file(path.join(path.dirname(this.currentDocument.path), uri.path));
 					}

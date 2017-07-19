@@ -17,11 +17,19 @@ export class OverviewRuler extends ViewEventHandler implements IOverviewRuler {
 	private _context: ViewContext;
 	private _overviewRuler: OverviewRulerImpl;
 
-	constructor(context: ViewContext, cssClassName: string, scrollHeight: number, minimumHeight: number, maximumHeight: number, getVerticalOffsetForLine: (lineNumber: number) => number) {
+	constructor(context: ViewContext, cssClassName: string, minimumHeight: number, maximumHeight: number) {
 		super();
 		this._context = context;
-		this._overviewRuler = new OverviewRulerImpl(0, cssClassName, scrollHeight, this._context.configuration.editor.lineHeight,
-			this._context.configuration.editor.canUseTranslate3d, minimumHeight, maximumHeight, getVerticalOffsetForLine);
+		this._overviewRuler = new OverviewRulerImpl(
+			0,
+			cssClassName,
+			this._context.viewLayout.getScrollHeight(),
+			this._context.configuration.editor.lineHeight,
+			this._context.configuration.editor.pixelRatio,
+			minimumHeight,
+			maximumHeight,
+			(lineNumber: number) => this._context.viewLayout.getVerticalOffsetForLineNumber(lineNumber)
+		);
 
 		this._context.addEventHandler(this);
 	}
@@ -39,8 +47,8 @@ export class OverviewRuler extends ViewEventHandler implements IOverviewRuler {
 			this._overviewRuler.setLineHeight(this._context.configuration.editor.lineHeight, true);
 		}
 
-		if (e.canUseTranslate3d) {
-			this._overviewRuler.setCanUseTranslate3d(this._context.configuration.editor.canUseTranslate3d, true);
+		if (e.pixelRatio) {
+			this._overviewRuler.setPixelRatio(this._context.configuration.editor.pixelRatio, true);
 		}
 
 		return true;

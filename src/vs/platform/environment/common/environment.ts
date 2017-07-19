@@ -11,6 +11,7 @@ export interface ParsedArgs {
 	help?: boolean;
 	version?: boolean;
 	wait?: boolean;
+	waitMarkerFilePath?: string;
 	diff?: boolean;
 	goto?: boolean;
 	'new-window'?: boolean;
@@ -30,6 +31,7 @@ export interface ParsedArgs {
 	extensionDevelopmentPath?: string;
 	extensionTestsPath?: string;
 	debugBrkPluginHost?: string;
+	debugId?: string;
 	debugPluginHost?: string;
 	'list-extensions'?: boolean;
 	'show-versions'?: boolean;
@@ -37,7 +39,7 @@ export interface ParsedArgs {
 	'uninstall-extension'?: string | string[];
 	'enable-proposed-api'?: string | string[];
 	'open-url'?: string | string[];
-	'prof-startup-timers': string;
+	'skip-getting-started'?: boolean;
 }
 
 export const IEnvironmentService = createDecorator<IEnvironmentService>('environmentService');
@@ -62,13 +64,16 @@ export interface IEnvironmentService {
 	backupHome: string;
 	backupWorkspacesPath: string;
 
+	workspacesHome: string;
+
 	isExtensionDevelopment: boolean;
 	disableExtensions: boolean;
 	extensionsPath: string;
 	extensionDevelopmentPath: string;
 	extensionTestsPath: string;
 
-	debugExtensionHost: { port: number; break: boolean; };
+	debugExtensionHost: { port: number; break: boolean; debugId: string };
+
 
 	logExtensionHostCommunication: boolean;
 
@@ -77,6 +82,8 @@ export interface IEnvironmentService {
 	wait: boolean;
 	performance: boolean;
 	profileStartup: { prefix: string, dir: string } | undefined;
+
+	skipGettingStarted: boolean | undefined;
 
 	mainIPCHandle: string;
 	sharedIPCHandle: string;

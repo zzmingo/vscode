@@ -6,7 +6,7 @@
 import Paths = require('vs/base/common/paths');
 import Json = require('vs/base/common/json');
 import { Color } from 'vs/base/common/color';
-import { ExtensionData, ITokenColorizationRule, IColorTheme, IColorMap, IThemeExtensionPoint, VS_LIGHT_THEME, VS_HC_THEME } from 'vs/workbench/services/themes/common/workbenchThemeService';
+import { ExtensionData, ITokenColorCustomizations, ITokenColorizationRule, IColorTheme, IColorMap, IThemeExtensionPoint, VS_LIGHT_THEME, VS_HC_THEME } from 'vs/workbench/services/themes/common/workbenchThemeService';
 import { convertSettings } from 'vs/workbench/services/themes/electron-browser/themeCompatibility';
 import { TPromise } from 'vs/base/common/winjs.base';
 import nls = require('vs/nls');
@@ -18,10 +18,21 @@ import pfs = require('vs/base/node/pfs');
 
 import { Extensions, IColorRegistry, ColorIdentifier, editorBackground, editorForeground } from 'vs/platform/theme/common/colorRegistry';
 import { ThemeType } from 'vs/platform/theme/common/themeService';
-import { Registry } from 'vs/platform/platform';
+import { Registry } from 'vs/platform/registry/common/platform';
 import { WorkbenchThemeService, IColorCustomizations } from "vs/workbench/services/themes/electron-browser/workbenchThemeService";
+import { getParseErrorMessage } from 'vs/base/common/jsonErrorMessages';
 
 let colorRegistry = <IColorRegistry>Registry.as(Extensions.ColorContribution);
+
+const tokenGroupToScopesMap = {
+	comments: 'comment',
+	strings: 'string',
+	keywords: 'keyword',
+	numbers: 'constant.numeric',
+	types: 'entity.name.type',
+	functions: 'entity.name.function',
+	variables: 'variable'
+};
 
 export class ColorThemeData implements IColorTheme {
 
@@ -32,8 +43,13 @@ export class ColorThemeData implements IColorTheme {
 	label: string;
 	settingsId: string;
 	description?: string;
-	selector: string;
-	tokenColors?: ITokenColorizationRule[];
+	get tokenColors(): ITokenColorizationRule[] {
+		// Add the custom colors after the theme colors
+		// so that they will override them
+		return this.themeTokenColors.concat(this.customTokenColors);
+	}
+	themeTokenColors: ITokenColorizationRule[] = [];
+	customTokenColors: ITokenColorizationRule[] = [];
 	isLoaded: boolean;
 	path?: string;
 	extensionData: ExtensionData;
@@ -71,17 +87,45 @@ export class ColorThemeData implements IColorTheme {
 				}
 			}
 		}
-		if (this.tokenColors) {
-			updateDefaultRuleSettings(this.tokenColors[0], this);
+		if (this.themeTokenColors && this.themeTokenColors.length) {
+			updateDefaultRuleSettings(this.themeTokenColors[0], this);
 		}
+	}
+
+	public setCustomTokenColors(customTokenColors: ITokenColorCustomizations) {
+		let generalRules: ITokenColorizationRule[] = [];
+
+		let value, settings, scope;
+		Object.keys(tokenGroupToScopesMap).forEach(key => {
+			value = customTokenColors[key];
+			settings = typeof value === 'string'
+				? { foreground: value }
+				: value;
+			scope = tokenGroupToScopesMap[key];
+
+			if (!settings) {
+				return;
+			}
+
+			generalRules.push({
+				scope,
+				settings
+			});
+		});
+
+		const textMateRules: ITokenColorizationRule[] = customTokenColors.textMateRules || [];
+
+		// Put the general customizations such as comments, strings, etc. first so that
+		// they can be overriden by specific customizations like "string.interpolated"
+		this.customTokenColors = generalRules.concat(textMateRules);
 	}
 
 	public ensureLoaded(themeService: WorkbenchThemeService): TPromise<void> {
 		if (!this.isLoaded) {
-			this.tokenColors = [];
+			this.themeTokenColors = [];
 			this.colorMap = {};
 			if (this.path) {
-				return _loadColorThemeFromFile(this.path, this.tokenColors, this.colorMap).then(_ => {
+				return _loadColorThemeFromFile(this.path, this.themeTokenColors, this.colorMap).then(_ => {
 					this.isLoaded = true;
 					_sanitizeTokenColors(this);
 				});
@@ -106,12 +150,13 @@ export class ColorThemeData implements IColorTheme {
 		for (let key in this.colorMap) {
 			colorMapData[key] = this.colorMap[key].toRGBAHex(true);
 		}
+		// no need to persist custom colors, they will be taken from the settings
 		return JSON.stringify({
 			id: this.id,
 			label: this.label,
 			settingsId: this.settingsId,
-			selector: this.selector,
-			tokenColors: this.tokenColors,
+			selector: this.id.split(' ').join('.'), // to not break old clients
+			themeTokenColors: this.themeTokenColors,
 			extensionData: this.extensionData,
 			colorMap: colorMapData
 		});
@@ -131,18 +176,32 @@ export class ColorThemeData implements IColorTheme {
 	}
 }
 
+export function createUnloadedTheme(id: string): ColorThemeData {
+	let themeData = new ColorThemeData();
+	themeData.id = id;
+	themeData.label = '';
+	themeData.settingsId = null;
+	themeData.isLoaded = false;
+	themeData.themeTokenColors = [{ settings: {} }];
+	return themeData;
+}
+
 export function fromStorageData(input: string): ColorThemeData {
 	try {
 		let data = JSON.parse(input);
 		let theme = new ColorThemeData();
 		for (let key in data) {
-			if (key !== 'colorMap') {
-				theme[key] = data[key];
-			} else {
-				let colorMapData = data[key];
-				for (let id in colorMapData) {
-					theme.colorMap[id] = Color.fromHex(colorMapData[id]);
-				}
+			switch (key) {
+				case 'colorMap':
+					let colorMapData = data[key];
+					for (let id in colorMapData) {
+						theme.colorMap[id] = Color.fromHex(colorMapData[id]);
+					}
+					break;
+				case 'themeTokenColors':
+				case 'id': case 'label': case 'settingsId': case 'extensionData':
+					theme[key] = data[key];
+					break;
 			}
 		}
 		return theme;
@@ -159,7 +218,6 @@ export function fromExtensionTheme(theme: IThemeExtensionPoint, normalizedAbsolu
 	themeData.id = `${baseTheme} ${themeSelector}`;
 	themeData.label = theme.label || Paths.basename(theme.path);
 	themeData.settingsId = theme.id || themeData.label;
-	themeData.selector = `${baseTheme}.${themeSelector}`;
 	themeData.description = theme.description;
 	themeData.path = normalizedAbsolutePath;
 	themeData.extensionData = extensionData;
@@ -181,7 +239,7 @@ function _loadColorThemeFromFile(themePath: string, resultRules: ITokenColorizat
 			let errors: Json.ParseError[] = [];
 			let contentValue = Json.parse(content.toString(), errors);
 			if (errors.length > 0) {
-				return TPromise.wrapError(new Error(nls.localize('error.cannotparsejson', "Problems parsing JSON theme file: {0}", errors.map(e => Json.getParseErrorMessage(e.error)).join(', '))));
+				return TPromise.wrapError(new Error(nls.localize('error.cannotparsejson', "Problems parsing JSON theme file: {0}", errors.map(e => getParseErrorMessage(e.error)).join(', '))));
 			}
 			let includeCompletes = TPromise.as(null);
 			if (contentValue.include) {
@@ -258,7 +316,7 @@ function _sanitizeTokenColors(theme: ColorThemeData) {
 	if (!hasDefaultTokens) {
 		updatedTokenColors.push(...defaultThemeColors[theme.type]);
 	}
-	theme.tokenColors = updatedTokenColors;
+	theme.themeTokenColors = updatedTokenColors;
 }
 
 function updateDefaultRuleSettings(defaultRule: ITokenColorizationRule, theme: ColorThemeData): ITokenColorizationRule {

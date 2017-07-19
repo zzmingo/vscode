@@ -19,8 +19,9 @@ import { Range } from 'vs/editor/common/core/range';
 import { SearchViewlet } from 'vs/workbench/parts/search/browser/searchViewlet';
 import { RemoveAction, ReplaceAllAction, ReplaceAction } from 'vs/workbench/parts/search/browser/searchActions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { attachBadgeStyler } from "vs/platform/theme/common/styler";
-import { IThemeService } from "vs/platform/theme/common/themeService";
+import { attachBadgeStyler } from 'vs/platform/theme/common/styler';
+import { IThemeService } from 'vs/platform/theme/common/themeService';
+import { getPathLabel } from 'vs/base/common/labels';
 
 export class SearchDataSource implements IDataSource {
 
@@ -213,6 +214,8 @@ export class SearchRenderer extends Disposable implements IRenderer {
 		templateData.actions.clear();
 		if (searchModel.isReplaceActive()) {
 			templateData.actions.push([this.instantiationService.createInstance(ReplaceAction, tree, match, this.viewlet), new RemoveAction(tree, match)], { icon: true, label: false });
+		} else {
+			templateData.actions.push([new RemoveAction(tree, match)], { icon: true, label: false });
 		}
 	}
 
@@ -230,19 +233,21 @@ export class SearchAccessibilityProvider implements IAccessibilityProvider {
 
 	public getAriaLabel(tree: ITree, element: FileMatchOrMatch): string {
 		if (element instanceof FileMatch) {
-			const path = this.contextService.toWorkspaceRelativePath(element.resource()) || element.resource().fsPath;
+			const path = getPathLabel(element.resource(), this.contextService) || element.resource().fsPath;
 
 			return nls.localize('fileMatchAriaLabel', "{0} matches in file {1} of folder {2}, Search result", element.count(), element.name(), paths.dirname(path));
 		}
 
 		if (element instanceof Match) {
-			let match = <Match>element;
-			let input = <SearchResult>tree.getInput();
-			if (input.searchModel.isReplaceActive()) {
-				let preview = match.preview();
-				return nls.localize('replacePreviewResultAria', "Replace preview result, {0}", preview.before + match.replaceString + preview.after);
+			const match = <Match>element;
+			const searchModel: SearchModel = (<SearchResult>tree.getInput()).searchModel;
+			const replace = searchModel.isReplaceActive() && !!searchModel.replaceString;
+			const preview = match.preview();
+			const range = match.range();
+			if (replace) {
+				return nls.localize('replacePreviewResultAria', "Replace term {0} with {1} at column position {2} in line with text {3}", preview.inside, match.replaceString, range.startColumn + 1, match.text());
 			}
-			return nls.localize('searchResultAria', "{0}, Search result", match.text());
+			return nls.localize('searchResultAria', "Found term {0} at column position {1} in line with text {2}", preview.inside, range.startColumn + 1, match.text());
 		}
 		return undefined;
 	}

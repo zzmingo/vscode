@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 .preferences-editor > .preferences-header {
-	border-bottom: 1px solid #efeff2;
 	display: flex;
 	flex-wrap: wrap;
 	padding-left: 27px;
@@ -19,74 +18,47 @@
 	padding-bottom: 5px;
 }
 
-.vs-dark .preferences-editor > .preferences-header {
-	border-bottom: 1px solid #2d2d2d;
+.preferences-editor > .preferences-editors-container.side-by-side-preferences-editor {
+	position: relative;
 }
 
-.settings-tabs-widget {
+.settings-targets-widget {
+	flex-wrap: wrap;
+    margin-left: 18px;
+    margin-top: 8px;
 	display: flex;
-	flex-wrap: wrap;
-	line-height: 28px;
-}
-
-.settings-tabs-widget > .monaco-action-bar > .actions-container {
-	flex-wrap: wrap;
-}
-
-.settings-tabs-widget > .monaco-action-bar .action-item .action-label {
-	text-transform: uppercase;
-	font-size: 11px;
-	margin-left: 33px;
-	margin-right: 0px;
-	padding-top: 6px;
+    border-radius: 4px;
+    padding: 0 8px;
 	cursor: pointer;
-	padding-bottom: 4px; /* puts the bottom border down */
 }
 
-.settings-tabs-widget > .monaco-action-bar .action-item .action-label.disabled {
-	cursor: default;
+.settings-targets-widget > .settings-target {
+	font-size: 11px;
+	padding: 2px 4px 0 0;
+	white-space: nowrap;
+    overflow: hidden;
+	flex: 1;
+	display: flex;
 }
 
-.vs .settings-tabs-widget > .monaco-action-bar .action-item .action-label:not(.disabled) {
-	color: #424242;
-	opacity: 0.75;
+.settings-targets-widget > .settings-target > .settings-target-label {
+	text-transform: uppercase;
 }
 
-.vs-dark .settings-tabs-widget > .monaco-action-bar .action-item .action-label:not(.disabled) {
-	color: #e7e7e7;
-	opacity: 0.5;
+.settings-targets-widget > .settings-target > .settings-target-details {
+    margin-left: 0.5em;
+    font-size: 10px;
+	opacity: 0.7;
 }
 
-.hc-black .settings-tabs-widget > .monaco-action-bar .action-item .action-label:not(.disabled) {
-	color: #fff;
+.settings-targets-widget > .settings-target > .settings-target-details.empty {
+	margin-left: 0;
 }
 
-.settings-tabs-widget > .monaco-action-bar .action-item:hover .action-label:not(.disabled),
-.settings-tabs-widget > .monaco-action-bar .action-item .action-label.checked:not(.disabled) {
-	opacity: 1;
-}
-
-.settings-tabs-widget > .monaco-action-bar .action-item .action-label.checked {
-	border-bottom: 1px solid;
-}
-
-.vs .settings-tabs-widget > .monaco-action-bar .action-item .action-label.checked {
-	border-bottom-color: #ccceda;
-}
-
-.vs-dark .settings-tabs-widget > .monaco-action-bar .action-item .action-label.checked {
-	border-bottom-color: #404047;
-}
-
-.vs .settings-tabs-widget > .monaco-action-bar .action-item .action-label:focus,
-.vs-dark .settings-tabs-widget > .monaco-action-bar .action-item .action-label:focus {
-	border-bottom: 1px solid #007ACC;
-	outline: none !important;
-}
-
-.hc-black .settings-tabs-widget > .monaco-action-bar .action-item .action-label:focus {
-	border-bottom: 1px solid #f38518;
-	outline: none !important;
+.settings-targets-widget > .settings-target-dropdown-icon {
+	padding-left: 0.5em;
+	padding-top: 4px;
+	font-size: 12px;
 }
 
 .preferences-header > .settings-header-widget {
@@ -135,12 +107,30 @@
 	padding-left:10px;
 }
 
-.vs-dark .preferences-editor .side-by-side-preferences-editor > .editable-preferences-editor-container {
-	box-shadow: -6px 0 5px -5px black;
+.monaco-editor .settings-header-widget .title-container {
+	padding-left: 12px;
+	display: flex;
 }
 
-.preferences-editor .side-by-side-preferences-editor > .editable-preferences-editor-container {
-	box-shadow: -6px 0 5px -5px #DDD;
+.vs .monaco-editor .settings-header-widget .title-container {
+	color: #6f6f6f;
+}
+.vs-dark .monaco-editor .settings-header-widget .title-container {
+	color: #bbbbbb;
+}
+.hc-black .monaco-editor .settings-header-widget .title-container {
+	color: white;
+}
+
+.monaco-editor .settings-header-widget .title-container .title {
+	font-weight: bold;
+	white-space: nowrap;
+	text-transform: uppercase;
+}
+
+.monaco-editor .settings-header-widget .title-container .message {
+	padding-left: 12px;
+	white-space: nowrap;
 }
 
 .monaco-editor .settings-group-title-widget {
@@ -153,11 +143,18 @@
 	font-weight: bold;
 	-webkit-user-select: none;
 	user-select: none;
+	display: flex;
 }
 
 .vs .monaco-editor .settings-group-title-widget .title-container {
 	color: #6f6f6f;
 }
+
+.monaco-editor .settings-group-title-widget .title-container .title {
+	white-space: nowrap;
+	overflow: hidden;
+}
+
 .vs-dark .monaco-editor .settings-group-title-widget .title-container {
 	color: #bbbbbb;
 }
@@ -182,12 +179,7 @@
 .monaco-editor .settings-group-title-widget .title-container .expand-collapse-icon {
 	background: url(expanded.svg) 50% 50% no-repeat;
 	width: 16px;
-	height: 16px;
-}
-
-.monaco-editor .settings-group-title-widget .title-container > div {
-	vertical-align: middle;
-	display: inline-block;
+	height: 100%;
 }
 
 .monaco-editor.vs-dark .settings-group-title-widget .title-container .expand-collapse-icon,
